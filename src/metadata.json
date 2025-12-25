@@ -1,0 +1,5 @@
+{
+  "name": "The Last Login: Forensic CTF",
+  "description": "An immersive cybersecurity forensic simulation where players analyze encrypted sessions, bypass authentication, and investigate privilege escalation. Developed with high-fidelity UI/UX inspired by forensic terminals.",
+  "requestFramePermissions": []
+}
