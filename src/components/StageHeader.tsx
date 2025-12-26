@@ -21,7 +21,7 @@ const StageHeader: React.FC<StageHeaderProps> = ({ stageName, stageNumber, timer
 
   return (
     <header className="relative z-20 flex items-center justify-between border-b-2 border-border-dark bg-surface-dark/95 px-8 py-5 shadow-2xl backdrop-blur-md font-display">
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 text-left">
         <div className="size-10 text-primary flex items-center justify-center bg-primary/10 rounded-xl border-2 border-primary shadow-[0_0_15px_rgba(255,0,0,0.3)]">
           <span className="material-symbols-outlined text-3xl font-black italic">emergency_home</span>
         </div>

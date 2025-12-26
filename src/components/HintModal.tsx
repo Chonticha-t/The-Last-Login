@@ -12,7 +12,7 @@ const HintModal: React.FC<HintModalProps> = ({ isOpen, onClose, hint, isLoading 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="w-full max-w-md glass-panel rounded-xl overflow-hidden border-primary/30 shadow-[0_0_50px_rgba(255,0,0,0.2)]">
         <div className="bg-primary/10 px-6 py-4 border-b border-primary/20 flex justify-between items-center">
           <h3 className="text-primary font-black text-xs tracking-widest uppercase flex items-center gap-2">

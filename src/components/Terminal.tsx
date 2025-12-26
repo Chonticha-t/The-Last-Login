@@ -22,14 +22,14 @@ const Terminal: React.FC<TerminalProps> = ({ title, lines }) => {
       case 'LOAD': return 'text-red-400';
       case 'WARN': return 'text-accent-yellow';
       case 'ERR': return 'text-primary font-bold';
-      case 'SUCCESS': return 'text-red-500';
+      case 'SUCCESS': return 'text-green-500';
       case 'EXEC': return 'text-white font-medium';
       default: return 'text-gray-600';
     }
   };
 
   return (
-    <div className="flex flex-col h-full glass-panel rounded-xl overflow-hidden border-2 border-border-dark shadow-2xl font-mono">
+    <div className="flex flex-col h-full glass-panel rounded-xl overflow-hidden border-2 border-border-dark shadow-2xl font-mono text-left">
       <div className="bg-black/95 px-6 py-3 flex items-center gap-3 border-b-2 border-border-dark">
         <span className="material-symbols-outlined text-primary text-lg font-black italic">terminal</span>
         <span className="text-xs font-black text-primary uppercase tracking-widest">{title}</span>

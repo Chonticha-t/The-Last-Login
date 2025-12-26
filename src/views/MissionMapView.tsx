@@ -16,22 +16,22 @@ const MissionMapView: React.FC<MissionMapViewProps> = ({ status, onEnterStage })
   const stages = [
     { 
       id: GameStage.CRYPTO, 
-      label: 'PHASE 01: RITUAL', 
-      phase: 'วิเคราะห์บทสวด 4 ทิศ', 
+      label: 'ระยะที่ 01: ถอดรหัส', 
+      phase: 'วิเคราะห์ข้อมูลการชันสูตร', 
       icon: 'radar', 
       completed: !!status.flags.crypto 
     },
     { 
       id: GameStage.AUTH, 
-      label: 'PHASE 02: RESTRICTED', 
-      phase: 'เจาะร่องรอยฆาตกรตัวจริง', 
+      label: 'ระยะที่ 02: เจาะระบบ', 
+      phase: 'ตามรอยคนร้ายตัวจริง', 
       icon: 'privacy_tip', 
       completed: !!status.flags.auth 
     },
     { 
       id: GameStage.AUTHZ, 
-      label: 'PHASE 03: JUSTICE', 
-      phase: 'เปิดโปงความจริงขั้นสุดท้าย', 
+      label: 'ระยะที่ 03: ความยุติธรรม', 
+      phase: 'เปิดโปงผู้บงการ', 
       icon: 'gavel', 
       completed: !!status.flags.authz 
     },
@@ -39,18 +39,18 @@ const MissionMapView: React.FC<MissionMapViewProps> = ({ status, onEnterStage })
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-background-dark p-6 sm:p-10 lg:p-20 relative font-display pb-32">
-      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-start md:items-end mb-24 border-b-2 border-border-dark pb-12 gap-6">
+      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-start md:items-end mb-24 border-b-2 border-border-dark pb-12 gap-6 text-left">
         <div>
           <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight uppercase italic leading-none drop-shadow-[0_0_20px_rgba(255,0,0,0.3)]">
-            INVESTIGATION_PATH
+            เส้นทางการสืบสวน
           </h1>
-          <p className="text-primary text-sm font-bold tracking-widest uppercase mt-6 flex items-center gap-3">
+          <p className="text-primary text-sm font-bold tracking-widest uppercase mt-6 flex items-center gap-3 font-body">
              <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(255,0,0,1)]"></span>
-             Cardinal Ritual Case Progress
+             ความคืบหน้าคดีฆาตกรรมพิธีกรรมสี่ทิศ
           </p>
         </div>
-        <div className="flex flex-col items-end gap-3 min-w-[250px] w-full md:w-auto">
-          <span className="text-xs font-mono text-primary/80 uppercase font-black tracking-widest">PROGRESS: {status.progress}%</span>
+        <div className="flex flex-col items-end gap-3 min-w-[250px] w-full md:w-auto font-mono">
+          <span className="text-xs text-primary/80 uppercase font-black tracking-widest">ความสำเร็จ: {status.progress}%</span>
           <div className="w-full h-4 bg-border-dark rounded-full flex gap-1 overflow-hidden p-1 border border-primary/20">
             <div className={`h-full bg-primary transition-all duration-1000 ${status.progress >= 33 ? 'flex-[1]' : 'w-0 opacity-0'}`}></div>
             <div className={`h-full bg-primary transition-all duration-1000 ${status.progress >= 66 ? 'flex-[1]' : 'w-0 opacity-20'}`}></div>
@@ -62,7 +62,7 @@ const MissionMapView: React.FC<MissionMapViewProps> = ({ status, onEnterStage })
       <div className="flex-1 w-full max-w-6xl flex items-center justify-center relative py-20">
         <div className="absolute top-1/2 left-20 right-20 h-px bg-border-dark -translate-y-1/2 hidden md:block"></div>
         <div className="flex flex-col md:flex-row justify-between items-center w-full gap-16 md:gap-4 relative z-10">
-          {stages.map((stage, index) => {
+          {stages.map((stage) => {
             const isActive = stage.id === activeStage;
             return (
               <div key={stage.id} className="flex flex-col items-center gap-10 group">
@@ -77,12 +77,12 @@ const MissionMapView: React.FC<MissionMapViewProps> = ({ status, onEnterStage })
                   </h3>
                   {isActive ? (
                     <button onClick={() => onEnterStage(stage.id)} className="bg-primary hover:bg-white text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-4 shadow-2xl shadow-primary/30 transition-all transform hover:scale-110 active:scale-95">
-                      INITIATE
+                      เริ่มภารกิจ
                       <span className="material-symbols-outlined text-lg font-black">arrow_forward_ios</span>
                     </button>
                   ) : (
                     <div className={`text-[11px] font-black uppercase tracking-widest px-6 py-2 rounded-xl border ${stage.completed ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-black/40 border-border-dark text-gray-800'}`}>
-                      {stage.completed ? 'COMPLETED' : 'LOCKED'}
+                      {stage.completed ? 'เสร็จสิ้น' : 'ล็อกอยู่'}
                     </div>
                   )}
                 </div>

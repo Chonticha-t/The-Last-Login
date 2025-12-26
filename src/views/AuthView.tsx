@@ -36,79 +36,79 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
   const [rooms, setRooms] = useState<SuspectRoom[]>([
     {
       id: 1,
-      name: "นายคำปัน",
-      role: "พ่อของตุ๊",
+      name: "กัมปนาท",
+      role: "พ่อของตู้",
       authType: "Password-based",
       icon: "elderly",
-      description: "คอมพิวเตอร์เก่าที่เก็บตำราดั้งเดิม ถูกล็อกด้วยรหัสที่เขาไม่เคยเปลี่ยน",
-      challenge: "ป้อนรหัสผ่าน (ชื่อเล่นลูกชายของเขาเป็นตัวพิมพ์ใหญ่)",
+      description: "คอมพิวเตอร์เครื่องเก่าที่เก็บคัมภีร์พิธีกรรม ล็อกด้วยรหัสผ่านที่เขาไม่เคยเปลี่ยน",
+      challenge: "กรอกรหัสผ่าน (ชื่อเล่นของ 'ตู้' เป็นภาษาอังกฤษตัวใหญ่)",
       answer: "TU",
-      evidence: ["คัมภีร์พิธี (ขาดหน้า)", "มีดหมอ (ไม่เคยใช้)"],
-      behavior: "เคยกล่าวว่าพื้นที่เกิดเหตุเป็น 'ดินที่ยังไม่สะอาด' และหลีกเลี่ยงการพูดถึงพิธีกรรม",
+      evidence: ["ม้วนคัมภีร์พิธีกรรม (หน้าที่หายไป)", "มีดทำพิธี (ยังไม่เคยใช้)"],
+      behavior: "ระบุว่าสถานที่นั้น 'ยังไม่สะอาดพอ' และพยายามเลี่ยงที่จะพูดถึงพิธีกรรม",
       isUnlocked: false,
       color: "border-red-900"
     },
     {
       id: 2,
-      name: "อาจารย์ศักดิ์",
-      role: "อาจารย์ภาควิชาสนาม",
-      authType: "PIN-based (4-Digits)",
+      name: "ศ. ดร. ศักดิ์",
+      role: "นักประวัติศาสตร์สนาม",
+      authType: "PIN-based (4 ตัวเลข)",
       icon: "history_edu",
-      description: "เซฟเก็บข้อมูลภาคสนามถูกล็อกด้วยปีที่เขาเชื่อว่าเป็นจุดเริ่มต้นของอาถรรพ์",
-      challenge: "หา PIN (ปีที่ตุ๊เสียชีวิต คือ 2 ปีก่อนหน้าปี 2024)",
+      description: "ตู้เซฟสนามที่ล็อกด้วยปีที่เขาเชื่อว่าเป็นจุดเริ่มต้นของคำสาป",
+      challenge: "ค้นหา PIN (ปีที่ตู้เสียชีวิต: 2 ปีก่อนจากปี 2024)",
       answer: "2022",
-      evidence: ["คัมภีร์บทสวด (ฉบับเต็ม)", "สมุดจดคำอธิษฐาน"],
-      behavior: "ปรากฏตัวในพื้นที่เกิดเหตุของศพทั้งสาม และแสดงความเชื่อแรงกล้าเรื่องบาปกรรม",
+      evidence: ["สมุดสวดฉบับเต็ม", "บันทึกคาถาอาคม"],
+      behavior: "พบเห็นที่สถานที่เกิดเหตุทั้งสามแห่ง มีความเชื่อรุนแรงเรื่องบาปกรรม",
       isUnlocked: false,
       color: "border-red-800"
     },
     {
       id: 3,
-      name: "รองอธิการธวัช",
+      name: "รองฯ ธวัช",
       role: "ผู้บริหารมหาวิทยาลัย",
       authType: "OTP (One-Time Password)",
       icon: "account_balance",
-      description: "ระบบกู้คืนไฟล์เอกสารที่ถูกฉีกต้องการรหัส OTP เพื่อยืนยันสิทธิ์ผู้บริหาร",
-      challenge: "กู้คืนรหัส OTP (รหัสเริ่มต้นระบบ 123 ตามด้วย 456)",
+      description: "ระบบกู้คืนไฟล์ต้องใช้รหัส OTP เพื่อยืนยันสิทธิ์การเป็นผู้ดูแล",
+      challenge: "กู้คืน OTP (รหัสเริ่มต้น 123 ตามด้วย 456)",
       answer: "123456",
-      evidence: ["เอกสารถูกฉีกบางส่วน", "USB Log การเบิกจ่าย"],
-      behavior: "เป็นผู้สั่งระงับการเผยแพร่ข้อมูลทันทีหลังพบศพ และเข้าถึงทุกพื้นที่ได้",
+      evidence: ["เอกสารที่ถูกทำลาย", "Log การโอนย้ายงบประมาณ"],
+      behavior: "สั่งให้ปิดข่าวทันทีและสามารถเข้าถึงพื้นที่ควบคุมได้ทุกจุด",
       isUnlocked: false,
       color: "border-primary"
     },
     {
       id: 4,
-      name: "นายประเสริฐ",
-      role: "เจ้าหน้าที่ภาคสนาม",
-      authType: "Biometric (Face ID Hash)",
+      name: "ประเสริฐ",
+      role: "เจ้าหน้าที่สนาม",
+      authType: "Biometric Hash",
       icon: "engineering",
-      description: "บันทึกเวรในคืนเกิดเหตุถูกเข้ารหัสด้วย Face ID Hash ของเจ้าหน้าที่",
-      challenge: "ป้อนรหัส Hash ของใบหน้า (ดูรหัสในไฟล์ FACE_ID.LOG)",
+      description: "บันทึกการปฏิบัติงานในคืนที่เกิดเหตุ ถูกล็อกด้วยรหัส Face ID ของเขา",
+      challenge: "กรอก Face ID Hash (พบในไฟล์ FACE_ID.LOG)",
       answer: "FACE-99",
-      evidence: ["วิทยุสื่อสาร", "บันทึกการเข้าเวรที่ถูกแก้ไข"],
-      behavior: "อยู่ในคืนที่ตุ๊เสียชีวิต แต่คำให้การมีความคลาดเคลื่อนกับข้อมูลในระบบ",
+      evidence: ["วิทยุสื่อสาร", "เวรยามที่ถูกดัดแปลง"],
+      behavior: "ปฏิบัติหน้าที่ในคืนที่ตู้เสียชีวิต คำให้การขัดแย้งกับบันทึกในระบบ",
       isUnlocked: false,
       color: "border-red-950"
     },
     {
       id: 5,
-      name: "ดร.มนัส",
-      role: "ที่ปรึกษาโครงการ",
+      name: "ดร. มานัส",
+      role: "อาจารย์ที่ปรึกษาโครงการ",
       authType: "Multifactor (MFA)",
       icon: "biotech",
-      description: "ห้องแล็บลับที่ใช้จัดเก็บข้อมูลวิจัยต้องการรหัสยืนยันหลายชั้น",
-      challenge: "ป้อนรหัส MFA (ชื่อโครงการวิจัย 'PROJECT-X')",
+      description: "คลังข้อมูลลับในห้องแล็บที่ต้องการการยืนยันหลายชั้น",
+      challenge: "กรอกรหัส MFA (ชื่อโปรเจกต์วิจัย: 'PROJECT-X')",
       answer: "PROJECT-X",
-      evidence: ["เอกสารงานวิจัยด้านพิธีกรรม", "ตารางเวลานัดหมายที่ถูกเข้ารหัส"],
-      behavior: "เป็นผู้เสนอแนวคิดเชื่อมโยงคดีเข้ากับความเชื่อท้องถิ่นอย่างเป็นวิชาการ",
+      evidence: ["เอกสารวิจัยพิธีกรรม", "ตารางเวลาที่ถูกเข้ารหัส"],
+      behavior: "เสนอทฤษฎีความเชื่อมโยงระหว่างการฆาตกรรมกับตำนานท้องถิ่นในเชิงวิชาการ",
       isUnlocked: false,
       color: "border-red-700"
     }
   ]);
 
   const [logs, setLogs] = useState<TerminalLine[]>([
-    { timestamp: new Date().toLocaleTimeString(), type: 'SYSTEM', content: 'Restricted Wing Infiltration Sub-routine Active.' },
-    { timestamp: new Date().toLocaleTimeString(), type: 'WARN', content: 'Five secure subject nodes detected. Exfiltration required.' }
+    { timestamp: new Date().toLocaleTimeString(), type: 'SYSTEM', content: 'เริ่มภารกิจแทรกซึมพื้นที่ควบคุม' },
+    { timestamp: new Date().toLocaleTimeString(), type: 'WARN', content: 'ตรวจพบโหนดความปลอดภัย 5 จุดที่ต้องดึงข้อมูล' }
   ]);
 
   const handleVerify = () => {
@@ -122,14 +122,14 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
         setRooms(prev => prev.map(r => r.id === activeRoomId ? { ...r, isUnlocked: true } : r));
         setLogs(prev => [
           ...prev,
-          { timestamp: new Date().toLocaleTimeString(), type: 'SUCCESS', content: `Access Authorized: ${room.name}` },
-          { timestamp: new Date().toLocaleTimeString(), type: 'INFO', content: `Artifacts exfiltrated from node ID-0${room.id}.` }
+          { timestamp: new Date().toLocaleTimeString(), type: 'SUCCESS', content: `ได้รับสิทธิ์การเข้าถึง: ${room.name}` },
+          { timestamp: new Date().toLocaleTimeString(), type: 'INFO', content: `ดึงข้อมูลจากโหนด ID-0${room.id} สำเร็จ` }
         ]);
         setActiveRoomId(null);
         setInputValue('');
       } else {
         setError(true);
-        setLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), type: 'ERR', content: `Authentication Breach Failed: ${room.authType} Mismatch.` }]);
+        setLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), type: 'ERR', content: `การเจาะระบบล้มเหลว: รหัสผ่านไม่ถูกต้อง` }]);
         setTimeout(() => setError(false), 1000);
       }
       setIsVerifying(false);
@@ -137,38 +137,38 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
   };
 
   const evidenceFiles = [
-    { name: 'KAMPAN_BIO.TXT', content: "Subject: Kampan\nSon: Tu (Deceased 2022)\nKey: SON_NAME" },
-    { name: 'FACE_ID.LOG', content: "Detected_Subject: Prasert\nHash_Ref: FACE-99" },
-    { name: 'RESEARCH_DRAFT.PDF', content: "Title: Project-X\nAuthor: Dr. Manas" },
-    { name: 'LOG_RECOVERY.TMP', content: "Default_OTP_Buffer: 123456" }
+    { name: 'ประวัติ_กัมปนาท.TXT', content: "เป้าหมาย: กัมปนาท\nบุตรชาย: ตู้ (เสียชีวิตปี 2022)\nรหัสผ่าน: ชื่อบุตรชาย" },
+    { name: 'FACE_ID.LOG', content: "ตรวจพบใบหน้า: ประเสริฐ\nHash_Ref: FACE-99" },
+    { name: 'ร่างงานวิจัย.PDF', content: "ชื่อโครงการ: Project-X\nผู้แต่ง: ดร. มานัส" },
+    { name: 'บันทึกการกู้คืน.TMP', content: "Default_OTP_Buffer: 123456" }
   ];
 
   const unlockedCount = rooms.filter(r => r.isUnlocked).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background-dark font-display">
+    <div className="min-h-screen flex flex-col bg-background-dark font-display text-left">
       <StageHeader
-        stageName="RESTRICTED_WING_INVESTIGATION"
+        stageName="ตรวจสอบพื้นที่ควบคุม"
         stageNumber={2}
         timer={status.timer}
         hintsUsed={status.hintsUsed}
         onRequestHint={onRequestHint}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col lg:flex-row font-body">
         <section className="flex-1 p-8 lg:p-12 pb-40">
           <div className="max-w-6xl mx-auto space-y-12">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-primary/20 pb-10 gap-6">
               <div>
-                <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tight italic drop-shadow-[0_0_20px_rgba(255,0,0,0.4)] leading-none">THE RESTRICTED WING</h2>
+                <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tight italic drop-shadow-[0_0_20px_rgba(255,0,0,0.4)] leading-none font-display">พื้นที่ควบคุมพิเศษ</h2>
                 <p className="text-primary font-bold text-sm mt-4 tracking-widest uppercase flex items-center gap-3">
                   <span className="material-symbols-outlined font-black">lock_person</span>
-                  SECURE NODES: {unlockedCount} / 5 DECRYPTED
+                  โหนดที่เจาะได้: {unlockedCount} / 5
                 </p>
               </div>
               <div className="flex gap-4">
                 {evidenceFiles.map(f => (
-                  <button key={f.name} onClick={() => setSelectedFile({...f, type: 'SECURE_DASHBOARD'})} className="glass-panel px-6 py-3 rounded-xl flex items-center gap-3 hover:border-primary transition-all border-primary/20">
+                  <button key={f.name} onClick={() => setSelectedFile({...f, type: 'แดชบอร์ดความปลอดภัย'})} className="glass-panel px-6 py-3 rounded-xl flex items-center gap-3 hover:border-primary transition-all border-primary/20">
                     <span className="material-symbols-outlined text-primary font-black">encrypted</span>
                     <span className="text-[10px] font-bold uppercase">{f.name}</span>
                   </button>
@@ -195,11 +195,11 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                     <div className="mb-8">
                       <div className="flex items-center gap-3 mb-2">
                         <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${room.isUnlocked ? 'bg-primary text-black border-primary' : 'bg-white/5 text-primary/60 border-primary/20'}`}>
-                          {room.isUnlocked ? 'AUTHORIZED' : 'LOCKED'}
+                          {room.isUnlocked ? 'อนุญาตแล้ว' : 'ล็อกอยู่'}
                         </span>
                         <span className="text-[10px] font-bold text-gray-600 uppercase font-mono">{room.authType}</span>
                       </div>
-                      <h3 className="text-white font-black text-3xl uppercase tracking-tighter italic leading-none">{room.name}</h3>
+                      <h3 className="text-white font-black text-3xl uppercase tracking-tighter italic leading-none font-display">{room.name}</h3>
                       <p className="text-primary font-bold text-xs uppercase tracking-widest mt-2">{room.role}</p>
                     </div>
 
@@ -209,7 +209,7 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                           <div>
                             <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2 italic">
                               <span className="material-symbols-outlined text-lg font-black">inventory_2</span>
-                              SECURED ARTIFACTS
+                              หลักฐานที่ตรวจพบ
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {room.evidence.map((e, i) => (
@@ -220,7 +220,7 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                           <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20">
                             <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2 italic">
                               <span className="material-symbols-outlined text-lg font-black">visibility</span>
-                              BEHAVIOR_REPORT
+                              รายงานพฤติกรรม
                             </h4>
                             <p className="text-sm text-gray-400 italic font-medium leading-relaxed">"{room.behavior}"</p>
                           </div>
@@ -230,7 +230,7 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                           <p className="text-lg text-gray-500 italic leading-relaxed font-medium">"{room.description}"</p>
                           <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20 flex flex-col items-center gap-4 group-hover:bg-primary/20 transition-all">
                              <span className="material-symbols-outlined text-primary text-4xl animate-pulse font-black">key</span>
-                             <p className="text-[10px] font-black text-primary uppercase tracking-widest">BYPASS AUTHENTICATION</p>
+                             <p className="text-[10px] font-black text-primary uppercase tracking-widest">เริ่มกระบวนการยืนยันตัวตน</p>
                           </div>
                         </div>
                       )}
@@ -244,10 +244,10 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
               <div className="flex justify-center pt-10 animate-in zoom-in duration-700">
                 <button
                   onClick={onComplete}
-                  className="bg-primary hover:bg-white text-black font-black px-24 py-8 rounded-[2.5rem] uppercase tracking-widest text-3xl italic shadow-[0_0_100px_rgba(255,0,0,0.4)] transition-all transform hover:scale-110 active:scale-95 flex items-center gap-8"
+                  className="bg-primary hover:bg-white text-black font-black px-24 py-8 rounded-[2.5rem] uppercase tracking-widest text-3xl italic shadow-[0_0_100px_rgba(255,0,0,0.4)] transition-all transform hover:scale-110 active:scale-95 flex items-center gap-8 font-display"
                 >
                   <span className="material-symbols-outlined font-black text-5xl">verified_user</span>
-                  FINALIZE_STAGE_02
+                  เสร็จสิ้นขั้นตอนที่ 02
                 </button>
               </div>
             )}
@@ -255,12 +255,12 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
         </section>
 
         <aside className="w-full lg:w-96 border-l-2 border-border-dark shrink-0 min-h-[500px]">
-          <Terminal title="WING_SECURITY_LOG" lines={logs} />
+          <Terminal title="บันทึกความปลอดภัย" lines={logs} />
         </aside>
       </div>
 
       {activeRoomId !== null && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300 font-body">
           <div className="w-full max-w-2xl glass-panel border-4 border-primary rounded-[3rem] p-12 md:p-16 flex flex-col gap-10 relative overflow-hidden shadow-[0_0_150px_rgba(255,0,0,0.3)]">
             <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                 <span className="material-symbols-outlined text-[300px] font-black italic">vpn_key</span>
@@ -269,10 +269,10 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
             <div className="relative z-10 space-y-10">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                   <span className="text-[10px] font-black bg-primary text-black px-4 py-1 rounded-full uppercase tracking-widest">CHALLENGE_GATE</span>
+                   <span className="text-[10px] font-black bg-primary text-black px-4 py-1 rounded-full uppercase tracking-widest">ด่านทดสอบ</span>
                    <span className="text-xs font-mono text-primary/60 font-bold uppercase">{rooms.find(r => r.id === activeRoomId)?.authType}</span>
                 </div>
-                <h2 className="text-5xl font-black text-white uppercase italic leading-none tracking-tight">BYPASS: {rooms.find(r => r.id === activeRoomId)?.name}</h2>
+                <h2 className="text-5xl font-black text-white uppercase italic leading-none tracking-tight font-display">ปลดล็อก: {rooms.find(r => r.id === activeRoomId)?.name}</h2>
               </div>
               
               <div className="bg-primary/5 p-8 rounded-3xl border-l-[12px] border-primary">
@@ -282,14 +282,14 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
               </div>
 
               <div className="space-y-8">
-                <div className="relative group">
+                <div className="relative group font-mono">
                   <input
                     value={inputValue}
                     onChange={e => setInputValue(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleVerify()}
                     autoFocus
-                    className={`w-full bg-black border-2 ${error ? 'border-primary animate-shake' : 'border-primary/20 focus:border-primary'} rounded-[2rem] py-8 px-10 font-mono text-3xl text-white outline-none transition-all placeholder-red-950 uppercase italic font-black shadow-2xl`}
-                    placeholder="ENTER CREDENTIALS..."
+                    className={`w-full bg-black border-2 ${error ? 'border-primary animate-shake' : 'border-primary/20 focus:border-primary'} rounded-[2rem] py-8 px-10 text-3xl text-white outline-none transition-all placeholder-red-950 uppercase italic font-black shadow-2xl`}
+                    placeholder="กรอกข้อมูลยืนยัน..."
                     disabled={isVerifying}
                   />
                   {isVerifying && <div className="absolute right-10 top-1/2 -translate-y-1/2 size-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>}
@@ -299,16 +299,16 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                   <button
                     onClick={handleVerify}
                     disabled={isVerifying || !inputValue}
-                    className="flex-1 bg-primary hover:bg-white disabled:bg-gray-900 disabled:text-gray-700 text-black font-black py-6 rounded-2xl uppercase tracking-widest text-xl transition-all active:scale-95 italic shadow-2xl shadow-primary/20 flex items-center justify-center gap-4"
+                    className="flex-1 bg-primary hover:bg-white disabled:bg-gray-900 disabled:text-gray-700 text-black font-black py-6 rounded-2xl uppercase tracking-widest text-xl transition-all active:scale-95 italic shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 font-display"
                   >
                     <span className="material-symbols-outlined font-black text-3xl">lock_open</span>
-                    {isVerifying ? 'AUTHENTICATING...' : 'AUTHORIZE_ACCESS'}
+                    {isVerifying ? 'กำลังตรวจสอบ...' : 'ยืนยันสิทธิ์'}
                   </button>
                   <button
                     onClick={() => { setActiveRoomId(null); setInputValue(''); }}
-                    className="px-8 py-6 bg-transparent border-2 border-white/10 hover:border-white/40 text-gray-500 hover:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all italic"
+                    className="px-8 py-6 bg-transparent border-2 border-white/10 hover:border-white/40 text-gray-500 hover:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all italic font-display"
                   >
-                    ABORT
+                    ยกเลิก
                   </button>
                 </div>
               </div>

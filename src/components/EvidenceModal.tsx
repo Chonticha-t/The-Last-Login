@@ -15,7 +15,7 @@ const EvidenceModal: React.FC<EvidenceModalProps> = ({ isOpen, onClose, file }) 
   if (!isOpen || !file) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in pointer-events-auto">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
       <div 
         className="w-full max-w-3xl glass-panel rounded-xl flex flex-col h-[70vh] animate-zoom-in shadow-[0_0_100px_rgba(0,0,0,0.5)] border-primary/20"
         onClick={(e) => e.stopPropagation()}
@@ -51,7 +51,6 @@ const EvidenceModal: React.FC<EvidenceModalProps> = ({ isOpen, onClose, file }) 
           </button>
         </div>
       </div>
-      {/* Click backdrop to close */}
       <div className="absolute inset-0 -z-10" onClick={onClose}></div>
     </div>
   );

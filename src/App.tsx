@@ -53,24 +53,23 @@ const App: React.FC = () => {
   };
 
   const handleCompleteStage = (
-  flagKey: 'crypto' | 'auth' | 'authz',
-  nextMapStage: GameStage
-) => {
-  setStatus(prev => ({
-    ...prev,
-    flags: {
-      ...prev.flags,
-      [flagKey]: 'FLAG{...}',
-    },
-    stage: nextMapStage, // ✅ ใช้แล้ว
-    progress: prev.progress + 33,
-  }));
-};
-
+    flagKey: 'crypto' | 'auth' | 'authz',
+    nextMapStage: GameStage
+  ) => {
+    setStatus(prev => ({
+      ...prev,
+      flags: {
+        ...prev.flags,
+        [flagKey]: 'FLAG{COMPLETED}',
+      },
+      stage: nextMapStage,
+      progress: prev.progress + 33,
+    }));
+  };
 
   const handleRequestHint = async () => {
     if (status.hintsUsed >= 3) {
-      setHintState({ isOpen: true, loading: false, content: "Maximum hint allowance reached. You're on your own now." });
+      setHintState({ isOpen: true, loading: false, content: "คุณใช้สิทธิ์ในการขอรับข้อมูลข่าวกรองครบแล้ว จงใช้สติปัญญาของคุณต่อจากนี้เถิด" });
       return;
     }
 
@@ -78,10 +77,10 @@ const App: React.FC = () => {
     
     let context = "";
     switch(status.stage) {
-      case GameStage.CRYPTO: context = "Analyzing Diffie-Hellman handshake parameters in handshake.txt to find a secret key."; break;
-      case GameStage.AUTH: context = "Bypassing JWT authentication with HS256 algorithm and exploring OTP MFA."; break;
-      case GameStage.AUTHZ: context = "Exploiting IDOR to gain administrative privileges on /api/v1/admin/flags."; break;
-      default: context = "Planning the next move in the mission map.";
+      case GameStage.CRYPTO: context = "กำลังวิเคราะห์ค่าพารามิเตอร์การถอดรหัส AES และ Diffie-Hellman ที่เชื่อมโยงกับทิศทั้งสี่หลัก"; break;
+      case GameStage.AUTH: context = "กำลังพยายามเจาะระบบการยืนยันตัวตนหลายชั้นของผู้ต้องสงสัยในมหาวิทยาลัย"; break;
+      case GameStage.AUTHZ: context = "กำลังตรวจสอบการยกระดับสิทธิ์และการละเมิดนโยบายในเซิร์ฟเวอร์ห้องแล็บลับ"; break;
+      default: context = "กำลังวางแผนบนแผนที่ปฏิบัติการ";
     }
 
     const result = await getInvestigatorHint(status.stage, context);
@@ -103,7 +102,7 @@ const App: React.FC = () => {
       case GameStage.AUTH:
         return <AuthView status={status} onComplete={() => handleCompleteStage('auth', GameStage.MAP)} onRequestHint={handleRequestHint} />;
       case GameStage.AUTHZ:
-        return <AuthzView status={status} onComplete={() => setStage(GameStage.COMPLETE)} onRequestHint={handleRequestHint} />;
+        return <AuthzView status={status} onComplete={() => setStage(GameStage.ACCUSE)} onRequestHint={handleRequestHint} />;
       case GameStage.ACCUSE:
         return <AccuseView onCorrect={() => setStage(GameStage.COMPLETE)} onWrong={() => setStage(GameStage.MAP)} />;
       case GameStage.COMPLETE:
@@ -114,9 +113,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col bg-background-dark overflow-x-hidden overflow-y-auto">
-      <div className="fixed inset-0 bg-cyber-grid bg-[length:40px_40px] opacity-[0.05] pointer-events-none"></div>
-      <div className="fixed top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(255,0,0,0.05)_0%,_transparent_100%)] pointer-events-none"></div>
+    <div className="relative min-h-screen w-full flex flex-col bg-background-dark overflow-x-hidden overflow-y-auto cyber-grid font-body">
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(255,0,0,0.05)_0%,_transparent_100%)] pointer-events-none"></div>
 
       <main className="flex-1 relative z-10 flex flex-col">
         {renderCurrentStage()}
@@ -126,15 +124,15 @@ const App: React.FC = () => {
         <div className="flex gap-6">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-            SYSTEM: ONLINE
+            ระบบ: ออนไลน์
           </span>
-          <span>ENCRYPTION: AES-256-XTS</span>
+          <span>การเข้ารหัส: AES-256-XTS</span>
         </div>
         <div className="flex gap-6">
-          <span>SERVER: NOD-77-GLOBAL</span>
+          <span>เซิร์ฟเวอร์: NOD-77-GLOBAL</span>
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px] text-primary">sensors</span>
-            LATENCY: 14MS
+            สัญญาณ: 14MS
           </span>
         </div>
       </footer>
