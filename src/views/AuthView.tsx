@@ -43,7 +43,7 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
       description: "คอมพิวเตอร์เครื่องเก่าที่เก็บคัมภีร์พิธีกรรม ล็อกด้วยรหัสผ่านที่เขาไม่เคยเปลี่ยน",
       challenge: "กรอกรหัสผ่าน (ชื่อเล่นของ 'ตู้' เป็นภาษาอังกฤษตัวใหญ่)",
       answer: "TU",
-      evidence: ["ม้วนคัมภีร์พิธีกรรม (หน้าที่หายไป)", "มีดทำพิธี (ยังไม่เคยใช้)"],
+      evidence: ["ม้วนคัมีร์พิธีกรรม (หน้าที่หายไป)", "มีดทำพิธี (ยังไม่เคยใช้)"],
       behavior: "ระบุว่าสถานที่นั้น 'ยังไม่สะอาดพอ' และพยายามเลี่ยงที่จะพูดถึงพิธีกรรม",
       isUnlocked: false,
       color: "border-red-900"
@@ -137,10 +137,10 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
   };
 
   const evidenceFiles = [
-    { name: 'ประวัติ_กัมปนาท.TXT', content: "เป้าหมาย: กัมปนาท\nบุตรชาย: ตู้ (เสียชีวิตปี 2022)\nรหัสผ่าน: ชื่อบุตรชาย" },
-    { name: 'FACE_ID.LOG', content: "ตรวจพบใบหน้า: ประเสริฐ\nHash_Ref: FACE-99" },
-    { name: 'ร่างงานวิจัย.PDF', content: "ชื่อโครงการ: Project-X\nผู้แต่ง: ดร. มานัส" },
-    { name: 'บันทึกการกู้คืน.TMP', content: "Default_OTP_Buffer: 123456" }
+    { name: 'ประวัติ_กัมปนาท.TXT', status: 'RESTRICTED', content: "เป้าหมาย: กัมปนาท\nบุตรชาย: ตู้ (เสียชีวิตปี 2022)\nรหัสผ่าน: ชื่อบุตรชาย", icon: 'person' },
+    { name: 'FACE_ID.LOG', status: 'ENCRYPTED', content: "ตรวจพบใบหน้า: ประเสริฐ\nHash_Ref: FACE-99", icon: 'face' },
+    { name: 'ร่างงานวิจัย.PDF', status: 'ENCRYPTED', content: "ชื่อโครงการ: Project-X\nผู้แต่ง: ดร. มานัส", icon: 'description' },
+    { name: 'บันทึกการกู้คืน.TMP', status: 'ENCRYPTED', content: "Default_OTP_Buffer: 123456", icon: 'settings_backup_restore' }
   ];
 
   const unlockedCount = rooms.filter(r => r.isUnlocked).length;
@@ -166,11 +166,22 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
                   โหนดที่เจาะได้: {unlockedCount} / 5
                 </p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 {evidenceFiles.map(f => (
-                  <button key={f.name} onClick={() => setSelectedFile({...f, type: 'แดชบอร์ดความปลอดภัย'})} className="glass-panel px-6 py-3 rounded-xl flex items-center gap-3 hover:border-primary transition-all border-primary/20">
-                    <span className="material-symbols-outlined text-primary font-black">encrypted</span>
-                    <span className="text-[10px] font-bold uppercase">{f.name}</span>
+                  <button 
+                    key={f.name} 
+                    onClick={() => setSelectedFile({...f, type: 'บันทึกความปลอดภัย'})} 
+                    className="glass-panel px-6 py-4 rounded-xl flex items-center gap-4 hover:border-primary transition-all group border-primary/20 bg-black/40"
+                  >
+                    <span className="material-symbols-outlined text-primary text-2xl font-black group-hover:scale-110 transition-transform">
+                      {f.icon}
+                    </span>
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="text-[8px] text-primary/70 font-black tracking-widest uppercase">{f.status}</span>
+                      <span className="text-xs font-mono font-bold text-white tracking-tight uppercase">
+                        {f.name}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>

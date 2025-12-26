@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface BriefingViewProps {
   onInvestigate: () => void;
@@ -7,9 +6,69 @@ interface BriefingViewProps {
 
 const BriefingView: React.FC<BriefingViewProps> = ({ onInvestigate }) => {
   const [step, setStep] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
+
+  // เสียงที่ใช้แต่ละหน้า
+  const soundTracks = {
+    1: 'https://assets.mixkit.co/active_storage/sfx/2465/2465.wav', // Dark forest
+    2: 'https://assets.mixkit.co/active_storage/sfx/2458/2458.wav', // Water ritual
+    3: 'https://assets.mixkit.co/active_storage/sfx/2466/2466.wav', // Cold wind
+  };
+
+  // เล่นเสียง
+  const playSound = (step: number) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    const audio = new Audio(soundTracks[step as keyof typeof soundTracks]);
+    audio.loop = true;
+    audio.volume = 1.0;
+    
+    audio.play().catch(err => {
+      console.log('Audio play prevented:', err);
+    });
+    
+    audioRef.current = audio;
+    setIsPlaying(true);
+  };
+
+  // หยุดเสียง
+  const stopSound = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+  };
+
+  // Toggle เสียง
+  const toggleSound = () => {
+    if (isPlaying) {
+      stopSound();
+    } else {
+      playSound(step);
+    }
+  };
+
+  // เปลี่ยนเสียงเมื่อเปลี่ยนหน้า
+  useEffect(() => {
+    if (isPlaying) {
+      playSound(step);
+    }
+  }, [step]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      stopSound();
+    };
+  }, []);
 
   const ProgressIndicator = () => (
     <div className="absolute top-12 left-1/2 -translate-x-1/2 flex gap-3 z-50">
@@ -25,6 +84,17 @@ const BriefingView: React.FC<BriefingViewProps> = ({ onInvestigate }) => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start overflow-y-auto overflow-x-hidden relative bg-background-dark font-display selection:bg-primary selection:text-black">
       <ProgressIndicator />
+      
+      {/* ปุ่มควบคุมเสียง */}
+      <button 
+        onClick={toggleSound}
+        className="fixed top-4 right-4 z-50 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-full p-3 transition-all group"
+        title={isPlaying ? "ปิดเสียง" : "เปิดเสียง"}
+      >
+        <span className="material-symbols-outlined text-white text-xl">
+          {isPlaying ? 'volume_up' : 'volume_off'}
+        </span>
+      </button>
       
       {/* --- หน้า 1: การค้นพบ --- */}
       {step === 1 && (

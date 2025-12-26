@@ -7,7 +7,7 @@ interface CompleteViewProps {
   onReset: () => void;
 }
 
-const CompleteView: React.FC<CompleteViewProps> = ({ status, onReset }) => {
+const CompleteView: React.FC<CompleteViewProps> = ({ status }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
 

@@ -113,10 +113,10 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
   };
 
   const evidenceFiles = [
-    { id: 'v1', name: 'ประวัติ_เหยื่อ_01.BIO', type: 'BIO', content: "ชื่อ: สมชาย\nคณะ: วิศวกรรมธรณี (Geology)\nปีที่เข้า: 2021\nหมายเหตุ: 'ดินจะจดจำกลิ่นแรก...'" },
-    { id: 'sig', name: 'สถานะ_ลายเซ็น.LOG', type: 'LOG', content: "ผู้ลงนาม: VP_Thawat\nผู้ออกใบรับรอง: University_CA\nสถานะ: EXPIRED\nการตรวจพบ: วันที่ในใบรับรองไม่ตรงกับเวลาปัจจุบัน" },
-    { id: 'dh', name: 'รหัสลับ_วารี.TXT', type: 'CRYPTO', content: "Public_G: 2\nPublic_P: 13\nAlice_A: 3\nBob_b: 4\nสูตร: Shared_Secret_s = A^b mod p" },
-    { id: 'meta', name: 'ลายเซ็น_สุดท้าย.SIG', type: 'META', content: "X-Auth-ID: MANAT-52\nX-Auth-Role: DR_MANAT\nหมายเหตุ: 'ชีวิตที่สี่ไม่ผูกพันกับพิธีกรรม'" }
+    { id: 'v1', name: 'ประวัติ_เหยื่อ_01.BIO', type: 'BIO', content: "ชื่อ: สมชาย\nคณะ: วิศวกรรมธรณี (Geology)\nปีที่เข้า: 2021\nหมายเหตุ: 'ดินจะจดจำกลิ่นแรก...'", icon: 'person_search' },
+    { id: 'sig', name: 'สถานะ_ลายเซ็น.LOG', type: 'LOG', content: "ผู้ลงนาม: VP_Thawat\nผู้ออกใบรับรอง: University_CA\nสถานะ: EXPIRED\nการตรวจพบ: วันที่ในใบรับรองไม่ตรงกับเวลาปัจจุบัน", icon: 'history_edu' },
+    { id: 'dh', name: 'รหัสลับ_วารี.TXT', type: 'CRYPTO', content: "Public_G: 2\nPublic_P: 13\nAlice_A: 3\nBob_b: 4\nสูตร: Shared_Secret_s = A^b mod p", icon: 'water_drop' },
+    { id: 'meta', name: 'ลายเซ็น_สุดท้าย.SIG', type: 'META', content: "X-Auth-ID: MANAT-52\nX-Auth-Role: DR_MANAT\nหมายเหตุ: 'ชีวิตที่สี่ไม่ผูกพันกับพิธีกรรม'", icon: 'fingerprint' }
   ];
 
   return (
@@ -138,9 +138,17 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
         <section className="flex-1 p-8 flex flex-col gap-8 pb-32">
           <div className="flex flex-wrap gap-4">
             {evidenceFiles.map(f => (
-              <button key={f.name} onClick={() => setSelectedFile(f)} className="glass-panel px-6 py-4 rounded-xl flex items-center gap-4 hover:border-primary transition-all group border-primary/20 font-body">
-                <span className="material-symbols-outlined text-primary text-2xl font-black">folder_managed</span>
-                <span className="text-xs font-mono font-bold">{f.name}</span>
+              <button 
+                key={f.name} 
+                onClick={() => setSelectedFile(f)} 
+                className="glass-panel px-6 py-4 rounded-xl flex items-center gap-4 hover:border-primary transition-all group border-primary/20 font-body bg-black/40"
+              >
+                <span className="material-symbols-outlined text-primary text-2xl font-black group-hover:scale-110 transition-transform">
+                  {f.icon}
+                </span>
+                <span className="text-xs font-mono font-bold text-white tracking-tight uppercase">
+                  {f.name}
+                </span>
               </button>
             ))}
           </div>
