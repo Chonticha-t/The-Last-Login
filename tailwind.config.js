@@ -4,7 +4,7 @@ export default {
     extend: {
       colors: {
         'background-dark': '#0a0a0a',
-        'primary': '#13ec5b',
+        'primary': '#ff0000', // เปลี่ยนจาก #13ec5b เป็นสีแดง
         'border-dark': '#1a1a1a',
         'surface-dark': '#121212',
         'accent-cyan': '#00f2ff',

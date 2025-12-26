@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { type TerminalLine } from '../types';
+import type { TerminalLine } from '../types';
 
 interface TerminalProps {
   title: string;
@@ -19,46 +19,45 @@ const Terminal: React.FC<TerminalProps> = ({ title, lines }) => {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'SYSTEM': return 'text-primary';
-      case 'LOAD': return 'text-accent-cyan';
+      case 'LOAD': return 'text-red-400';
       case 'WARN': return 'text-accent-yellow';
-      case 'ERR': return 'text-danger';
-      case 'SUCCESS': return 'text-primary';
-      case 'EXEC': return 'text-white';
-      default: return 'text-gray-400';
+      case 'ERR': return 'text-primary font-bold';
+      case 'SUCCESS': return 'text-red-500';
+      case 'EXEC': return 'text-white font-medium';
+      default: return 'text-gray-600';
     }
   };
 
   return (
-    <div className="flex flex-col h-full glass-panel rounded-xl overflow-hidden border border-gray-800 shadow-2xl">
-      <div className="bg-black/80 px-4 py-2 flex items-center gap-2 border-b border-gray-800">
-        <span className="material-symbols-outlined text-gray-500 text-sm">terminal</span>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">{title}</span>
-        <div className="ml-auto flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-danger/20 border border-danger"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-accent-yellow/20 border border-accent-yellow"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-primary/20 border border-primary"></div>
+    <div className="flex flex-col h-full glass-panel rounded-xl overflow-hidden border-2 border-border-dark shadow-2xl font-mono">
+      <div className="bg-black/95 px-6 py-3 flex items-center gap-3 border-b-2 border-border-dark">
+        <span className="material-symbols-outlined text-primary text-lg font-black italic">terminal</span>
+        <span className="text-xs font-black text-primary uppercase tracking-widest">{title}</span>
+        <div className="ml-auto flex gap-2">
+          <div className="w-3 h-3 rounded-full bg-primary/20 border-2 border-primary animate-pulse"></div>
+          <div className="w-3 h-3 rounded-full bg-border-dark border-2 border-border-dark"></div>
         </div>
       </div>
       <div 
         ref={scrollRef}
-        className="flex-1 p-4 font-mono text-[11px] leading-relaxed overflow-y-auto bg-black/60 selection:bg-primary selection:text-black"
+        className="flex-1 p-6 text-[12px] leading-relaxed overflow-y-auto bg-black/90 selection:bg-primary selection:text-black"
       >
-        <div className="text-gray-600 mb-2 italic">Session established via secure TTY. Accessing encrypted buffer...</div>
+        <div className="text-primary/40 mb-4 font-bold tracking-tight">RESTRICTED_TERMINAL_V5.0 // ENCRYPTION: ACTIVE</div>
         {lines.map((line, idx) => (
-          <div key={idx} className="mb-1.5 animate-in fade-in duration-300">
-            <span className="text-gray-600 mr-2">[{line.timestamp}]</span>
-            <span className={`font-bold mr-2 ${getTypeColor(line.type)}`}>{line.type}:</span>
-            <span className="text-gray-300">{line.content}</span>
+          <div key={idx} className="mb-2 animate-in fade-in duration-300">
+            <span className="text-gray-700 mr-3 font-medium">[{line.timestamp}]</span>
+            <span className={`font-black mr-3 ${getTypeColor(line.type)}`}>{line.type}:</span>
+            <span className="text-gray-300 font-medium">{line.content}</span>
             {line.details && (
-              <div className="pl-[75px] text-gray-500 mt-0.5 break-all">
+              <div className="pl-[85px] text-gray-600 mt-1 break-all text-[11px] italic">
                 {line.details}
               </div>
             )}
           </div>
         ))}
-        <div className="flex items-center gap-2 mt-4">
-          <span className="text-primary font-bold">root@forensics:~#</span>
-          <span className="w-2 h-4 bg-primary animate-pulse"></span>
+        <div className="flex items-center gap-3 mt-6">
+          <span className="text-primary font-black">onyx@forensics:~#</span>
+          <span className="w-2.5 h-5 bg-primary animate-pulse"></span>
         </div>
       </div>
     </div>

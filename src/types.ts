@@ -3,6 +3,7 @@ export const GameStage = {
   SPLASH: 'SPLASH',
   BRIEFING: 'BRIEFING',
   MAP: 'MAP',
+  ACCUSE: 'ACCUSE',
   CRYPTO: 'CRYPTO',
   AUTH: 'AUTH',
   AUTHZ: 'AUTHZ',

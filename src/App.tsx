@@ -7,6 +7,7 @@ import MissionMapView from './views/MissionMapView';
 import CryptoView from './views/CryptoView';
 import AuthView from './views/AuthView';
 import AuthzView from './views/AuthzView';
+import AccuseView from './views/AccuseView';
 import CompleteView from './views/CompleteView';
 import HintModal from './components/HintModal';
 import { getInvestigatorHint } from './services/genimiService';
@@ -103,6 +104,8 @@ const App: React.FC = () => {
         return <AuthView status={status} onComplete={() => handleCompleteStage('auth', GameStage.MAP)} onRequestHint={handleRequestHint} />;
       case GameStage.AUTHZ:
         return <AuthzView status={status} onComplete={() => setStage(GameStage.COMPLETE)} onRequestHint={handleRequestHint} />;
+      case GameStage.ACCUSE:
+        return <AccuseView onCorrect={() => setStage(GameStage.COMPLETE)} onWrong={() => setStage(GameStage.MAP)} />;
       case GameStage.COMPLETE:
         return <CompleteView status={status} onReset={() => window.location.reload()} />;
       default:
@@ -113,7 +116,7 @@ const App: React.FC = () => {
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-background-dark overflow-x-hidden overflow-y-auto">
       <div className="fixed inset-0 bg-cyber-grid bg-[length:40px_40px] opacity-[0.05] pointer-events-none"></div>
-      <div className="fixed top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(19,236,91,0.05)_0%,_transparent_100%)] pointer-events-none"></div>
+      <div className="fixed top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(255,0,0,0.05)_0%,_transparent_100%)] pointer-events-none"></div>
 
       <main className="flex-1 relative z-10 flex flex-col">
         {renderCurrentStage()}
