@@ -21,8 +21,8 @@ const SplashView: React.FC<SplashViewProps> = ({ onStart }) => {
         <div className="absolute -inset-20 bg-primary/10 blur-[150px] rounded-full animate-pulse"></div>
 
         <div className="relative mb-8 max-w-4xl px-4">
-           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tight drop-shadow-[0_0_30px_rgba(255,0,0,0.5)] uppercase font-display leading-tight">
-           รหัสลับสี่ทิศ:<br/>พิธีกรรมแห่งการเข้าถึง
+           <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tight drop-shadow-[0_0_30px_rgba(255,0,0,0.5)] uppercase font-display leading-tight">
+           บทสวดแห่งทิศทั้งสี่
           </h1>
         </div>
 
