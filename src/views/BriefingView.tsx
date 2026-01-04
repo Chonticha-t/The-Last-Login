@@ -120,7 +120,7 @@ const BriefingView: React.FC<BriefingViewProps> = ({ onInvestigate }) => {
                 </p>
                 
                 <div className="bg-primary/5 p-8 rounded-2xl border-l-8 border-primary text-white italic">
-                  <p className="text-2xl leading-relaxed font-bold font-display">"สภาพการตายดูเหมือนอุบัติเหตุ... แต่หลักฐานทางนิติวิทยาศาสตร์ชี้ว่ามีเงื่อนงำซ่อนอยู่"</p>
+                  <p className="text-2xl leading-relaxed font-bold font-display">"สภาพการตายดูผิดปกติ... พร้อมหลักฐานทางนิติวิทยาศาสตร์ที่ชี้ว่ามีเงื่อนงำซ่อนอยู่"</p>
                 </div>
                 
                 <p className="font-medium text-gray-400">
