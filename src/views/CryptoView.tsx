@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import type { CaseStatus, TerminalLine } from '../types';
 import StageHeader from '../components/StageHeader';
 import Terminal from '../components/Terminal';
+// Import รูปภาพจาก assets
+import death01 from '../assets/การตาย 01.png';
+import death02 from '../assets/การตาย 02.png';
+import death03 from '../assets/การตาย 03.png';
 
 interface CryptoViewProps {
   status: CaseStatus;
@@ -38,7 +42,8 @@ const CORPSES_DATA = [
     poem: `ทิศอุดร ป้อนธรณี พลีธาตุดิน 
   ฝังกายสิ้น ลงลึก ผนึกหมาย 
   เหลือเพียงเศียร พ้นพื้น ยืนท้าทาย 
-  ดูดชีพวาย ใต้หล้า กลับมาเป็น`
+  ดูดชีพวาย ใต้หล้า กลับมาเป็น`,
+    calendarImg: death01 // ผูกรูปที่ 1
   },
   {
     id: 1,
@@ -58,11 +63,11 @@ const CORPSES_DATA = [
       "สภาพศพ: ลอยคว่ำหน้าในแหล่งน้ำ สภาพขึ้นอืด มีสัญสักษณ์รูปสามเหลี่ยมหัวลงตรงกลางหน้าผาก",
       "ภายนอก: ไม่พบรอยบาดแผลฉกรรจ์ แต่พบรอยเข็มฉีดยา บริเวณต้นคอด้านขวา",
       "พิษวิทยา: ตรวจพบสาร Tetrodotoxin (พิษปลาปักเป้า) ในกระแสเลือดปริมาณสูง",
-      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน",
-      "สรุป: ผู้ตายเป็นอัมพาตจากสารพิษและจมน้ำเสียชีวิตในเวลาต่อมา"
-      
+      "สรุป: ผู้ตายเป็นอัมพาตจากสารพิษและจมน้ำเสียชีวิตในเวลาต่อมา",
+      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
     ],
-    poem: "บูรพา บูชาชล ดลธาตุน้ำ \nปล่อยศพลอย ทวนลำ ที่เชี่ยวเข็ญ \nให้กระแส แทรกซึม ดื่มความเย็น \nชะล้างเข็ญ เลือดหมุน อุ่นกายา"
+    poem: "บูรพา บูชาชล ดลธาตุน้ำ \nปล่อยศพลอย ทวนลำ ที่เชี่ยวเข็ญ \nให้กระแส แทรกซึม ดื่มความเย็น \nชะล้างเข็ญ เลือดหมุน อุ่นกายา",
+    calendarImg: death02 // ผูกรูปที่ 2
   },
   {
     id: 2,
@@ -83,10 +88,11 @@ const CORPSES_DATA = [
       "สภาพศพ: แขวนคออยู่บนกิ่งไม้สูงด้วยเชือกไนลอน มีสัญลักษณ์รูปสามเหลี่ยมหัวขึ้นมีขีดตรงกลางจารึกตรงกลางหน้าผาก",
       "ภายนอก: ลายนิ้วมือถูกทำลายด้วยสารเคมีกัดกร่อนรุนแรง",
       "ข้อสังเกต: รอยเชือกที่คอมีลักษณะกดทับในแนวเฉียงขึ้น แต่พบรอยกดทับอื่นที่เกิดขึ้นหลังตาย",
-      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน",
-      "สรุป: สารเคมีที่พบคือ กรดเข้มข้น (Acid)"
+      "สรุป: สารเคมีที่พบคือ กรดเข้มข้น (Acid)",
+       "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
     ],
-    poem: "ทิศทักษิณ ถิ่นวาโย โชว์ธาตุลม \nแขวนศพสม ยอดไม้ ไว้วเวหา \nให้ลมพัด ยัดเยียด เบียดวิญญา \nคืนลมปราณ สู่ปุระ อุระตน"
+    poem: "ทิศทักษิณ ถิ่นวาโย โชว์ธาตุลม \nแขวนศพสม ยอดไม้ ไว้วเวหา \nให้ลมพัด ยัดเยียด เบียดวิญญา \nคืนลมปราณ สู่ปุระ อุระตน",
+    calendarImg: death03 // ผูกรูปที่ 3
   },
   {
     id: 3,
@@ -105,7 +111,8 @@ const CORPSES_DATA = [
     autopsyFindings: [
       "ข้อมูลการสืบสวน(การคาดการณ์): เป้าหมายรายต่อไปถูกกำหนดให้เป็นเหยื่อในพิธี 'บูชาอัคคี' (ธาตุไฟ)",
     ],
-    poem: "ปัจจิม ริมอัคคี พลีธาตุไฟ \nเผาร่างให้ เกรียมกรม สมเหตุผล \nกระตุ้นเนื้อ ที่มอดไหม้ ให้ร้อนรน \nปลุกชีพคน ให้ฟื้น ตื่นนิทราฯ"
+    poem: "ปัจจิม ริมอัคคี พลีธาตุไฟ \nเผาร่างให้ เกรียมกรม สมเหตุผล \nกระตุ้นเนื้อ ที่มอดไหม้ ให้ร้อนรน \nปลุกชีพคน ให้ฟื้น ตื่นนิทราฯ",
+    calendarImg: null // รายที่ 4 ไม่มีรูป
   }
 ];
 
@@ -162,11 +169,9 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
   };
 
   const checkAllUnlocked = () => {
-    // ตรวจสอบว่าปลดล็อคครบทั้ง 4 ทิศ (Index 0, 1, 2, 3)
     const allCleared = unlockedStatus.every(s => s === true);
-
     if (allCleared) {
-      onComplete(); // ไปด่านที่ 2
+      onComplete();
     } else {
       setView('MAP');
     }
@@ -328,15 +333,37 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row gap-12 overflow-hidden">
-          <div className="w-full md:w-2/3 bg-zinc-900/10 border border-gray-800 p-8 overflow-y-auto relative">
+          <div className="w-full md:w-2/3 bg-zinc-900/10 border border-gray-800 p-8 overflow-y-auto relative custom-scrollbar">
             <h3 className="text-xl text-red-500 font-bold mb-6 border-b border-gray-800 pb-2 flex items-center gap-2 uppercase tracking-widest">
               <MaterialIcon icon="visibility" /> Observation Logs
             </h3>
             <ul className="space-y-6">
               {corpse.autopsyFindings.map((finding, idx) => (
-                <li key={idx} className="flex gap-4 items-start">
-                  <span className="text-red-900 mt-1">▶</span>
-                  <span className="text-lg leading-relaxed text-gray-200">{finding}</span>
+                <li key={idx} className="flex flex-col gap-4">
+                  <div className="flex gap-4 items-start">
+                    <span className="text-red-900 mt-1">▶</span>
+                    <span className="text-lg leading-relaxed text-gray-200">{finding}</span>
+                  </div>
+                  
+                  {/* แสดงรูปปฏิทินใต้บรรทัด "เวลาที่เสียชีวิต" */}
+                  {finding.includes("เวลาที่เสียชีวิต") && corpse.calendarImg && (
+                    <div className="ml-8 mt-4 max-w-md bg-zinc-950 border border-red-900/40 p-2 relative shadow-lg group">
+                      <div className="absolute -top-2 left-4 bg-black px-2 text-red-500 text-[9px] border border-red-900 uppercase font-black tracking-widest z-10">
+                        Time_Evidence_Photo
+                      </div>
+                      <div className="overflow-hidden rounded border border-zinc-800 bg-black">
+                        <img 
+                          src={corpse.calendarImg} 
+                          alt="Calendar evidence" 
+                          className="w-full h-auto opacity-80 group-hover:opacity-100 transition-opacity duration-500 cursor-zoom-in"
+                          onClick={() => window.open(corpse.calendarImg, '_blank')}
+                        />
+                      </div>
+                      <p className="text-[10px] text-zinc-600 mt-1 italic uppercase tracking-tighter">
+                        * คลิกเพื่อตรวจสอบปฏิทินหลักฐาน
+                      </p>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -358,7 +385,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
 
             <button
               onClick={checkAllUnlocked}
-              className="bg-red-800 hover:bg-red-700 text-black font-black py-5 px-6 border-b-4 border-red-950 active:translate-y-1 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(136,0,0,0.3)]"
+              className="bg-red-800 hover:bg-red-700 text-black font-black py-5 px-6 border-b-4 border-red-950 active:translate-y-1 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-[0_10px_30_rgba(136,0,0,0.3)]"
             >
               {unlockedStatus.every(s => s) ? "INITIATE NEXT STAGE" : "CLOSE & RETURN TO MAP"}
               <MaterialIcon icon={unlockedStatus.every(s => s) ? "login" : "map"} />
