@@ -1,387 +1,400 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { CaseStatus, TerminalLine } from '../types';
 import StageHeader from '../components/StageHeader';
 import Terminal from '../components/Terminal';
 
-interface RevelationViewProps {
+interface AuthzViewProps {
   status: CaseStatus;
   onComplete: () => void;
   onRequestHint: () => void;
 }
 
-// ข้อมูลผู้ต้องสงสัยและบทพูด
-const SUSPECTS_DATA = [
-  {
-    id: 1,
-    name: "นายคำปัน",
-    role: "พ่อผู้สูญเสีย",
-    status: "Suspicious",
-    imageIcon: "person",
-    heartRate: 85, // ชีพจรปกติ
-    testimony: "ผมรักลูกชายผมมาก... คืนนั้นผมนอนสวดมนต์อยู่ที่บ้าน ไม่รู้เรื่องพิธีกรรมบ้าบออะไรนั่นหรอก ผมเป็นแค่ชาวบ้านธรรมดา",
-    weaknessEvidenceId: "EVI_01", // แพ้ทางหลักฐาน: บทสวด/จดหมาย
-    breakdownText: "ใช่... ผมทำพิธีนั่นเอง! แต่ผมทำเพื่อ 'ช่วย' มันต่างหาก! ผมพยายามชุบชีวิตตุ๊ขึ้นมา ไม่ได้ฆ่ามัน!!",
-    isBroken: false
-  },
-  {
-    id: 2,
-    name: "ศ. ดร. ศักดิ์",
-    role: "นักประวัติศาสตร์",
-    status: "Suspicious",
-    imageIcon: "history_edu",
-    heartRate: 72,
-    testimony: "ของโบราณพวกนั้นผมแค่ยืมมาศึกษาตามระเบียบราชการ คืนนั้นผมหลับไปตั้งแต่หัวค่ำ ไม่ได้เข้าไปยุ่งย่ามในเขตหวงห้ามเลยสักนิด",
-    weaknessEvidenceId: "EVI_02", // แพ้ทางหลักฐาน: บันทึกยืมของ/Log
-    breakdownText: "โธ่เว้ย! ก็ได้ๆ ผมแอบเข้าไปขโมยวัตถุโบราณจริง แต่ผมเข้าไปตอนตี 1 แล้วรีบออกมา ผมเห็นแค่ศพ... แต่ผมไม่ได้ฆ่าใครนะ!",
-    isBroken: false
-  },
-  {
-    id: 3,
-    name: "รองฯ ธวัช",
-    role: "ผู้บริหาร",
-    status: "Suspicious",
-    imageIcon: "corporate_fare",
-    heartRate: 65,
-    testimony: "ทางมหาวิทยาลัยเสียใจกับเรื่องที่เกิดขึ้น เราพยายามประสานงานกับตำรวจอย่างเต็มที่ และไม่มีการปิดบังข้อมูลใดๆ ทั้งสิ้น",
-    weaknessEvidenceId: "EVI_03", // แพ้ทางหลักฐาน: สลิปโอนเงิน/คำสั่งปิดข่าว
-    breakdownText: "ฟังนะ... ชื่อเสียงมหาลัยสำคัญที่สุด! ผมแค่จ้างคนไปเก็บกวาดไม่ให้เป็นข่าว แต่ตอนผมไปถึง พวกเด็กนั่นก็ตายกันหมดแล้ว!",
-    isBroken: false
-  },
-  {
-    id: 4,
-    name: "นายประเสริฐ",
-    role: "รปภ.",
-    status: "Suspicious",
-    imageIcon: "badge",
-    heartRate: 110,
-    testimony: "ผม... ผมไม่เห็นอะไรทั้งนั้น! คืนนั้นผมนั่งเฝ้าป้อมยามหน้าประตูใหญ่ตลอดเวลา ไม่ได้หลับยาม และไม่มีใครผ่านเข้ามาเลย!",
-    weaknessEvidenceId: "EVI_04", // แพ้ทางหลักฐาน: CCTV/FaceID Log
-    breakdownText: "อ๊ากกก!! ผมเห็นมัน... เงาสีดำๆ ตัวสูงใหญ่ มันลากศพไปที่น้ำ... ผมกลัว! ผมเลยรีบหนีออกมา ผมไม่ได้ทำ!",
-    isBroken: false
-  },
-  {
-    id: 5,
-    name: "ดร. มนัส",
-    role: "นักวิจัยเคมี",
-    status: "Suspicious",
-    imageIcon: "biotech",
-    heartRate: 60, // นิ่งผิดปกติ
-    testimony: "คืนเกิดเหตุผมนอนหลับสบายอยู่ในห้องพักแล็บ ไม่ได้รับรู้อะไรเลย งานวิจัยของผมเกี่ยวกับพืชสมุนไพร ไม่เกี่ยวข้องกับสารอันตรายพวกนั้น",
-    weaknessEvidenceId: "EVI_05", // แพ้ทางหลักฐาน: แก้วกาแฟ/Arsenic Log
-    breakdownText: "หึ... ช่างสังเกตจังนะ ใช่ ผมไม่ได้นอน... การทดลอง 'Arsenic-33' เพื่อกระตุ้นระบบประสาทต้องใช้ความละเอียดอ่อน... พวกเด็กนั่นแค่อาสาสมัครที่ล้มเหลว",
-    isBroken: false
-  }
-];
+type TabType = 'MATRIX' | 'RBAC' | 'MLS' | 'ABAC';
 
-// หลักฐานที่ผู้เล่นถืออยู่ (จำลองว่าได้มาจาก Stage 2)
-const EVIDENCE_INVENTORY = [
-  { id: "EVI_01", name: "คัมภีร์บทสวด & จดหมาย", desc: "หลักฐานว่านายคำปันมีความรู้เรื่องพิธีกรรมมืดและพยายามทำบางอย่างเพื่อลูก" },
-  { id: "EVI_02", name: "Log การยืมวัตถุโบราณ", desc: "บันทึกที่ระบุว่า ศ.ศักดิ์ ยืมของกลางออกไปนอกเวลาและยังไม่คืน" },
-  { id: "EVI_03", name: "สลิปโอนเงิน & คำสั่งลับ", desc: "หลักฐานการจ้างวานปิดข่าวและการโอนเงินให้นายคำปัน" },
-  { id: "EVI_04", name: "CCTV & FaceID Log", desc: "บันทึกระบุว่า รปภ. ไม่อยู่ที่ป้อม และกล้องจับภาพอาการหวาดกลัวได้" },
-  { id: "EVI_05", name: "Log สารหนู & แก้วกาแฟ", desc: "บันทึกการเบิก Arsenic (As) และหลักฐานการดื่มกาแฟอย่างหนัก (นอนไม่หลับ)" },
-];
+const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint }) => {
+  const [activeTab, setActiveTab] = useState<TabType>('MATRIX');
+  const [inputValue, setInputValue] = useState('');
+  const [currentStage, setCurrentStage] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | null, msg: string }>({ type: null, msg: '' });
 
-const RevelationView: React.FC<RevelationViewProps> = ({ status, onComplete, onRequestHint }) => {
-  const [suspects, setSuspects] = useState(SUSPECTS_DATA);
-  const [selectedSuspectId, setSelectedSuspectId] = useState<number | null>(null);
-  const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
-  const [dialogue, setDialogue] = useState<string>("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [viewState, setViewState] = useState<'INTERROGATION' | 'VERDICT'>('INTERROGATION');
-  const [verdictId, setVerdictId] = useState<number | null>(null);
-  const [logs, setLogs] = useState<TerminalLine[]>([
-    { timestamp: 'SYSTEM', type: 'WARN', content: 'ENTERING FINAL STAGE: TRUTH REVELATION' },
-    { timestamp: 'AI_CORE', type: 'INFO', content: 'ANALYZE TESTIMONIES. FIND CONTRADICTIONS.' }
-  ]);
+  // ลำดับการสืบสวน: ตรวจสอบผู้ต้องสงสัยทีละกลุ่ม
+  const anomalies = [
+    {
+      id: 1,
+      targetChar: "อ.ศักดิ์ & คำปัน",
+      concept: "Access Control Matrix (DAC)",
+      alert: "INVESTIGATION: มีรายงานว่าเห็น 'เงาคนแก่' และ 'อาจารย์' ด้อมๆ มองๆ หน้าแล็บช่วงเกิดเหตุ",
+      question: "ตรวจสอบ Matrix: ใครที่มีสิทธิ์เข้าห้อง Lab (LAB_ACCESS) ได้จริง? (ระบุชื่อคนที่เข้าไม่ได้แต่พยายามเข้า)",
+      correctTab: 'MATRIX',
+      ans: "SAK-91", // ศักดิ์ไม่มีสิทธิ์แต่พยายามเข้า ส่วนคำปัน Retired ไปแล้ว
+      explanation: "ถูกต้อง! อ.ศักดิ์ (SAK-91) ไม่มีสิทธิ์เข้า Lab (สิทธิ์เป็น -) เขาจึงทำได้แค่ด้อมๆ มองๆ ส่วนนายคำปัน Account ถูกปิดไปนานแล้ว"
+    },
+    {
+      id: 2,
+      targetChar: "ประเสริฐ (พนักงานใหม่)",
+      concept: "Role-Based Access Control (RBAC)",
+      alert: "INVESTIGATION: ประเสริฐอ้างว่าพบศพและพยายามกด 'ปุ่มฉุกเฉิน' ผ่านระบบแต่ไม่ทำงาน",
+      question: "ตรวจสอบ Role: ประเสริฐ (PRASERT) อยู่ Role ไหน? และ Role นั้นขาด Permission อะไรที่จำเป็นสำหรับการแจ้งเหตุ?",
+      correctTab: 'RBAC',
+      ans: "EMERGENCY_BROADCAST", // Permission ที่ขาดหายไป
+      explanation: "ใช่แล้ว! ประเสริฐเป็นแค่ 'INTERN' ซึ่งไม่มีสิทธิ์ 'EMERGENCY_BROADCAST' เขาจึงไม่ได้โกหก เขาพยายามช่วยแล้วแต่ระบบไม่อนุญาต"
+    },
+    {
+      id: 3,
+      targetChar: "รองฯ ธวัช",
+      concept: "Multilevel Security (MLS)",
+      alert: "INVESTIGATION: ตำรวจขอข้อมูล 'ผลชันสูตร (AUTOPSY)' แต่หาไฟล์ในระบบไม่เจอ",
+      question: "ตรวจสอบ MLS: ไฟล์ AUTOPSY ถูกจัด Security Label ไว้ที่ระดับใด? และใครเป็นคนเดียวที่มีสิทธิ์อ่าน/เขียนระดับนั้น?",
+      correctTab: 'MLS',
+      ans: "VP-TWAT",
+      explanation: "ถูกต้อง! ไฟล์ถูกระบุเป็น 'TOP-SECRET' (Level 3) และผู้บริหารสูงสุด (VP-TWAT) คือคนเดียวที่เข้าถึงได้ เขาคือคนปิดข่าวเพื่อรักษาชื่อเสียง"
+    },
+    {
+      id: 4,
+      targetChar: "ดร.มนัส (ผู้ร้ายตัวจริง)",
+      concept: "Attribute-Based (ABAC)",
+      alert: "FINAL VERDICT: ระบบระบายอากาศทำงานปกติ แต่ทำไมสารพิษถึงยังค้างในห้อง?",
+      question: "ตรวจสอบ Policy: ใน JSON มีเงื่อนไข (Condition) ลับที่ชื่อว่าอะไร? ที่สั่ง Override ระบบความปลอดภัยทั้งหมด?",
+      correctTab: 'ABAC',
+      ans: "ANCIENT_RITUAL", // หรือชื่อตัวแปรที่ใช้ override
+      explanation: "ปิดคดี! มนัสสร้างเงื่อนไข 'ANCIENT_RITUAL' ไว้ในระบบ เมื่อเปิดโหมดนี้ พัดลมจะถูกบังคับปิดไม่ว่าสารพิษจะรั่วแค่ไหนก็ตาม"
+    }
+  ];
 
-  // Effect สำหรับพิมพ์ข้อความทีละตัว (Typewriter effect)
-  useEffect(() => {
-    if (selectedSuspectId) {
-      const suspect = suspects.find(s => s.id === selectedSuspectId);
-      if (suspect) {
-        const textToType = suspect.isBroken ? suspect.breakdownText : suspect.testimony;
-        setDialogue("");
-        setIsTyping(true);
-        let i = 0;
-        const timer = setInterval(() => {
-          if (i < textToType.length) {
-            setDialogue(prev => prev + textToType.charAt(i));
-            i++;
+  const handleVerify = () => {
+    setIsVerifying(true);
+    const stage = anomalies[currentStage];
+
+    if (activeTab !== stage.correctTab) {
+      setFeedback({ type: 'error', msg: `ผิดหมวด! กรุณาไปที่แท็บ ${stage.concept} เพื่อตรวจสอบข้อมูลของเป้าหมาย` });
+      setIsVerifying(false);
+      return;
+    }
+
+    setTimeout(() => {
+      // Logic การตรวจคำตอบแบบยืดหยุ่นขึ้น
+      const isCorrect = inputValue.trim().toUpperCase().includes(stage.ans.toUpperCase()) || 
+                        (stage.id === 1 && inputValue.toUpperCase().includes("SAK")); // พิเศษสำหรับข้อ 1
+
+      if (isCorrect) {
+        setFeedback({ type: 'success', msg: stage.explanation });
+        setTimeout(() => {
+          if (currentStage < anomalies.length - 1) {
+            setCurrentStage(prev => prev + 1);
+            setInputValue('');
+            setFeedback({ type: null, msg: '' });
           } else {
-            setIsTyping(false);
-            clearInterval(timer);
+            onComplete();
           }
-        }, 20); // ความเร็วการพิมพ์
-        return () => clearInterval(timer);
+        }, 4000); // ดีเลย์นานนิดนึงให้อ่านเนื้อเรื่องทัน
+      } else {
+        setFeedback({ type: 'error', msg: "ข้อมูลไม่ถูกต้อง วิเคราะห์ตาราง/เงื่อนไขใหม่อีกครั้ง" });
       }
-    }
-  }, [selectedSuspectId, suspects]); // Re-run when suspect or their status changes
-
-  const handlePresentEvidence = () => {
-    if (!selectedSuspectId || !selectedEvidenceId) return;
-
-    const suspectIndex = suspects.findIndex(s => s.id === selectedSuspectId);
-    const suspect = suspects[suspectIndex];
-
-    if (suspect.isBroken) {
-        setLogs(prev => [...prev, { timestamp: 'AI', type: 'WARN', content: 'SUBJECT ALREADY BROKEN.' }]);
-        return;
-    }
-
-    if (selectedEvidenceId === suspect.weaknessEvidenceId) {
-      // Success: Break the suspect
-      const newSuspects = [...suspects];
-      newSuspects[suspectIndex] = { ...suspect, isBroken: true, status: "Confessed" };
-      setSuspects(newSuspects);
-      setLogs(prev => [...prev, { timestamp: 'TRUTH', type: 'SUCCESS', content: `CONTRADICTION FOUND! SUBJECT ${suspect.name} BROKEN.` }]);
-      
-      // Play sound effect logic here if needed
-    } else {
-      // Failed
-      setLogs(prev => [...prev, { timestamp: 'AI', type: 'ERR', content: 'EVIDENCE DOES NOT CONTRADICT STATEMENT.' }]);
-      // Penalty logic could go here
-    }
-  };
-
-  const allBroken = suspects.every(s => s.isBroken);
-
-  const handleFinalVerdict = () => {
-    if (verdictId === 5) { // Dr. Manas is the culprit
-       onComplete();
-    } else {
-       setLogs(prev => [...prev, { timestamp: 'SYSTEM', type: 'ERR', content: 'INCORRECT VERDICT. THE REAL CULPRIT IS STILL FREE.' }]);
-    }
+      setIsVerifying(false);
+    }, 600);
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-body overflow-hidden flex flex-col">
-      <StageHeader stageName="STAGE 3: THE REVELATION" stageNumber={3} timer={status.timer} hintsUsed={status.hintsUsed} onRequestHint={onRequestHint} />
+    <div className="min-h-screen bg-black text-gray-200 font-mono flex flex-col p-4 md:p-8 gap-6">
+      <StageHeader stageName="Security Audit: ตรวจสอบบัญชีผู้ต้องสงสัย" stageNumber={3} timer={status.timer} hintsUsed={status.hintsUsed} onRequestHint={onRequestHint} />
 
-      <main className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
-        
-        {/* LEFT PANEL: SUSPECT LIST */}
-        <section className="w-full lg:w-80 bg-black border-r border-red-900/30 flex flex-col shrink-0 z-20 shadow-[10px_0_50px_rgba(0,0,0,0.5)]">
-          <div className="p-6 border-b border-red-900/30 bg-red-950/10">
-            <h2 className="text-xl font-black italic uppercase text-red-500 tracking-widest flex items-center gap-2">
-              <span className="material-symbols-outlined">group</span>
-              ผู้ต้องสงสัย
-            </h2>
-            <p className="text-[10px] text-gray-500 mt-1">SELECT SUBJECT TO INTERROGATE</p>
+      {/* Mission Banner */}
+      <div className="bg-gray-900 border-l-4 border-primary p-6 rounded-r-xl shadow-lg relative overflow-hidden group">
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+            <span className="bg-primary text-black text-xs font-black px-2 py-1 rounded uppercase tracking-widest">
+              STEP {currentStage + 1}: {anomalies[currentStage].targetChar}
+            </span>
+            <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">
+               Model: {anomalies[currentStage].concept}
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
-            {suspects.map(suspect => (
+          <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-2">
+            {anomalies[currentStage].alert}
+          </h2>
+          <p className="text-primary/90 text-lg font-bold border-t border-gray-700 pt-2 mt-2">
+             คำถาม: {anomalies[currentStage].question}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col lg:flex-row gap-6">
+        
+        {/* LEFT: EVIDENCE VIEWER */}
+        <div className="flex-1 bg-gray-900 rounded-xl border border-gray-700 flex flex-col overflow-hidden min-h-[400px]">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-700 bg-black overflow-x-auto">
+            {(['MATRIX', 'RBAC', 'MLS', 'ABAC'] as TabType[]).map((tab) => (
               <button
-                key={suspect.id}
-                onClick={() => {
-                    if (viewState === 'INTERROGATION') setSelectedSuspectId(suspect.id);
-                }}
-                disabled={viewState === 'VERDICT'}
-                className={`w-full p-4 rounded-xl border-l-4 transition-all relative overflow-hidden group text-left ${
-                  selectedSuspectId === suspect.id 
-                    ? 'bg-red-900/20 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.2)]' 
-                    : 'bg-zinc-900/40 border-zinc-700 hover:bg-zinc-800'
-                } ${suspect.isBroken ? 'opacity-70 grayscale' : ''}`}
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-4 px-4 text-xs md:text-sm font-bold transition-colors border-r border-gray-800 whitespace-nowrap relative
+                  ${activeTab === tab ? 'bg-gray-800 text-primary' : 'text-gray-500 hover:text-gray-300'}
+                `}
               >
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${suspect.isBroken ? 'border-gray-600 bg-gray-800' : 'border-red-500/50 bg-black'}`}>
-                    <span className="material-symbols-outlined text-2xl">{suspect.imageIcon}</span>
-                  </div>
-                  <div>
-                    <h3 className={`font-bold text-sm uppercase ${suspect.isBroken ? 'text-gray-400 line-through decoration-red-500' : 'text-white'}`}>{suspect.name}</h3>
-                    <p className="text-[10px] text-gray-400 tracking-wider">{suspect.role}</p>
-                  </div>
-                  {suspect.isBroken && (
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-red-600 font-black text-2xl -rotate-12 border-2 border-red-600 px-2 py-1 rounded opacity-50">BROKEN</span>
-                  )}
-                </div>
+                {activeTab === tab && <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>}
+                {tab}
               </button>
             ))}
           </div>
-        </section>
 
-        {/* CENTER PANEL: INTERROGATION ROOM */}
-        <section className="flex-1 flex flex-col relative bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
-          
-          {viewState === 'VERDICT' ? (
-             <div className="flex-1 flex flex-col items-center justify-center p-10 animate-in zoom-in duration-500 bg-black/80 backdrop-blur-sm z-30">
-                <h2 className="text-6xl font-black text-red-600 uppercase italic mb-8 blood-shadow text-center">Final Verdict</h2>
-                <p className="text-gray-300 text-xl mb-12 max-w-2xl text-center font-medium">
-                    จากคำสารภาพทั้งหมด... ใครคือ "ฆาตกรตัวจริง" ที่อยู่เบื้องหลังความตายเหล่านี้?
-                    <br/><span className="text-sm text-red-500 mt-2 block">(เลือกคนร้ายเพียงหนึ่งเดียว)</span>
-                </p>
-                <div className="grid grid-cols-5 gap-4 w-full max-w-5xl">
-                    {suspects.map(s => (
-                        <button 
-                            key={s.id}
-                            onClick={() => setVerdictId(s.id)}
-                            className={`p-6 border-2 rounded-xl flex flex-col items-center gap-4 transition-all ${
-                                verdictId === s.id ? 'border-red-500 bg-red-900/40 scale-105' : 'border-gray-700 bg-black/60 hover:border-gray-500'
-                            }`}
-                        >
-                            <span className="material-symbols-outlined text-4xl text-white">{s.imageIcon}</span>
-                            <span className="font-bold text-sm uppercase text-center">{s.name}</span>
-                        </button>
-                    ))}
+          {/* Content Area */}
+          <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-900/50">
+            
+            {/* 1. ACCESS CONTROL MATRIX (Focus: SAK, KAMPAN) */}
+            {activeTab === 'MATRIX' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                  <h3 className="text-primary font-bold">ACCESS MATRIX (Physical & Server)</h3>
+                  <span className="text-xs text-gray-500">Subject vs Object</span>
                 </div>
-                <button 
-                    onClick={handleFinalVerdict}
-                    disabled={!verdictId}
-                    className="mt-12 bg-red-600 hover:bg-red-500 text-white font-black text-2xl py-4 px-16 rounded-full uppercase tracking-widest shadow-[0_0_50px_rgba(220,38,38,0.5)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    พิพากษา (JUDGE)
-                </button>
-             </div>
-          ) : (
-            <>
-              {/* Pulse Monitor Area */}
-              <div className="h-24 bg-black border-b border-red-900/30 flex items-center px-8 justify-between relative overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(220,38,38,0.1)_50%,transparent_100%)] animate-scan-fast pointer-events-none"></div>
+                <table className="w-full text-xs md:text-sm text-left border-collapse">
+                  <thead className="text-gray-400 bg-black/40">
+                    <tr>
+                      <th className="p-3 border border-gray-700">USER (Subject)</th>
+                      <th className="p-3 border border-gray-700 text-center">LAB_ACCESS</th>
+                      <th className="p-3 border border-gray-700 text-center">SERVER_LOGIN</th>
+                      <th className="p-3 border border-gray-700 text-center">LIBRARY</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Kampan: The Ghost */}
+                    <tr className="opacity-50 hover:opacity-100 transition-opacity">
+                      <td className="p-3 border border-gray-700 font-bold text-gray-500">
+                        KAMPAN-99 <span className="text-[9px] block font-normal">(Inactive/Retired)</span>
+                      </td>
+                      <td className="p-3 border border-gray-700 text-center">-</td>
+                      <td className="p-3 border border-gray-700 text-center">-</td>
+                      <td className="p-3 border border-gray-700 text-center">Read</td>
+                    </tr>
+                    {/* Sak: The Suspicious Professor */}
+                    <tr className="bg-red-900/10 hover:bg-red-900/20">
+                      <td className="p-3 border border-gray-700 font-bold text-white">
+                        SAK-91 <span className="text-[9px] block text-gray-400 font-normal">(History Advisor)</span>
+                      </td>
+                      <td className="p-3 border border-gray-700 text-center text-red-500 font-bold bg-red-950/30">
+                        DENY
+                      </td>
+                      <td className="p-3 border border-gray-700 text-center">-</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">Read</td>
+                    </tr>
+                    {/* Manat & Tu */}
+                    <tr>
+                      <td className="p-3 border border-gray-700 font-bold text-white">DRM-01 (Manat)</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">ALLOW</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">ALLOW</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">Read</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 border border-gray-700 font-bold text-white">TU-STD (Victim)</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">ALLOW</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">ALLOW</td>
+                      <td className="p-3 border border-gray-700 text-center text-green-400">Read</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="bg-black/40 p-3 rounded text-xs text-gray-400 border-l-2 border-red-500">
+                  <strong className="text-red-400">LOGS DETECTED:</strong> SAK-91 attempted 'LAB_ACCESS' 5 times (Result: Access Denied).
+                </div>
+              </div>
+            )}
+
+            {/* 2. RBAC (Focus: PRASERT) */}
+            {activeTab === 'RBAC' && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                  <h3 className="text-primary font-bold">ROLE ASSIGNMENTS</h3>
+                  <span className="text-xs text-gray-500">User -&gt; Role -&gt; Permission</span>
+                </div>
                 
-                <div className="flex items-center gap-6 z-10">
-                   <div className="flex flex-col">
-                       <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Heart Rate</span>
-                       <span className={`text-4xl font-mono font-black ${selectedSuspectId && suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? 'text-red-600 animate-pulse' : 'text-green-500'}`}>
-                           {selectedSuspectId ? suspects.find(s=>s.id===selectedSuspectId)?.heartRate : '--'} <span className="text-sm">BPM</span>
-                       </span>
-                   </div>
-                   {/* Fake Waveform */}
-                   <div className="flex items-end gap-1 h-12 w-48 opacity-70">
-                        {[...Array(20)].map((_, i) => (
-                            <div key={i} className={`w-1.5 bg-red-500 transition-all duration-100 ease-in-out`} style={{ 
-                                height: `${Math.random() * 100}%`,
-                                opacity: selectedSuspectId ? 1 : 0.2
-                            }}></div>
-                        ))}
-                   </div>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* User to Role */}
+                  <div className="border border-gray-700 rounded bg-black/20 p-4">
+                    <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase">User Assignments</h4>
+                    <ul className="text-sm space-y-3">
+                      <li className="flex justify-between">
+                        <span>PRASERT</span>
+                        <span className="bg-blue-900 text-blue-200 px-2 py-0.5 rounded text-xs font-bold">INTERN</span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>DRM-01</span>
+                        <span className="bg-purple-900 text-purple-200 px-2 py-0.5 rounded text-xs font-bold">PROJECT_LEAD</span>
+                      </li>
+                    </ul>
+                  </div>
 
-                <div className="z-10 text-right">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest">Voice Analysis</div>
-                    <div className={`text-lg font-bold uppercase ${selectedSuspectId && suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? 'text-red-500' : 'text-blue-400'}`}>
-                        {selectedSuspectId ? (suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? 'DECEPTION DETECTED' : 'ANALYZING...') : 'STANDBY'}
+                  {/* Role to Permission */}
+                  <div className="border border-gray-700 rounded bg-black/20 p-4">
+                    <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase">Role Permissions</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-purple-400 font-bold text-xs">ROLE: PROJECT_LEAD</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <span className="px-2 py-0.5 bg-gray-700 rounded text-[10px]">ALL_ACCESS</span>
+                          <span className="px-2 py-0.5 bg-gray-700 rounded text-[10px]">EMERGENCY_BROADCAST</span>
+                        </div>
+                      </div>
+                      <div className="opacity-75">
+                        <span className="text-blue-400 font-bold text-xs">ROLE: INTERN</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <span className="px-2 py-0.5 bg-gray-700 rounded text-[10px]">READ_BASIC_DOCS</span>
+                          <span className="px-2 py-0.5 bg-red-900/50 text-red-400 border border-red-500/30 rounded text-[10px] line-through decoration-red-500">EMERGENCY_BROADCAST</span>
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Character & Dialogue Area */}
-              <div className="flex-1 relative flex flex-col items-center justify-end pb-12">
-                 
-                 {/* Silhouette / Character Visual */}
-                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                    <span className="material-symbols-outlined text-[400px] text-white">
-                        {selectedSuspectId ? suspects.find(s=>s.id===selectedSuspectId)?.imageIcon : 'fingerprint'}
-                    </span>
-                 </div>
+            {/* 3. MLS (Focus: THAWAT) */}
+            {activeTab === 'MLS' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                  <h3 className="text-primary font-bold">SECURITY CLEARANCE (MLS)</h3>
+                  <span className="text-xs text-gray-500">Bell-LaPadula Model</span>
+                </div>
 
-                 {/* Dialogue Box */}
-                 <div className="w-full max-w-4xl z-20 px-8">
-                    {selectedSuspectId ? (
-                        <div className={`glass-panel border-2 ${suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? 'border-red-600 bg-red-950/30' : 'border-primary/50 bg-black/80'} p-8 rounded-2xl relative shadow-2xl min-h-[180px] flex flex-col justify-center`}>
-                            
-                            <h3 className="absolute -top-4 left-8 px-4 py-1 bg-black border border-current text-sm font-bold uppercase tracking-widest" style={{ color: suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? '#ef4444' : '#ffffff' }}>
-                                {suspects.find(s=>s.id===selectedSuspectId)?.name}
-                            </h3>
+                <div className="space-y-3">
+                  {/* Top Secret */}
+                  <div className="bg-gradient-to-r from-red-950/40 to-black border-l-4 border-red-500 p-4 rounded relative">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-red-400 font-black text-sm tracking-widest">TOP-SECRET (Level 3)</h4>
+                        <p className="text-xs text-gray-400 mt-1">Users: <span className="text-white font-bold">VP-TWAT (รองฯ ธวัช)</span></p>
+                      </div>
+                      <span className="material-symbols-outlined text-red-500/20 text-4xl absolute right-4">lock</span>
+                    </div>
+                    <div className="mt-3 bg-black/50 p-2 rounded border border-red-500/20">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Files in this level:</p>
+                      <ul className="text-xs text-red-200 mt-1 list-disc list-inside">
+                         <li>FINANCIAL_AUDIT_REAL.XLSX</li>
+                         <li className="font-bold text-red-400 animate-pulse">AUTOPSY_REPORT_FINAL.PDF</li>
+                      </ul>
+                    </div>
+                  </div>
 
-                            <p className={`font-mono text-xl md:text-2xl leading-relaxed ${suspects.find(s=>s.id===selectedSuspectId)?.isBroken ? 'text-red-400 italic shake-animation' : 'text-gray-200'}`}>
-                                "{dialogue}"
-                                {isTyping && <span className="animate-blink">|</span>}
-                            </p>
-
-                            {/* Contradiction Prompt */}
-                            {!suspects.find(s=>s.id===selectedSuspectId)?.isBroken && !isTyping && (
-                                <div className="absolute bottom-4 right-4 animate-bounce">
-                                    <span className="text-xs text-primary bg-black/50 px-2 py-1 rounded">เลือกหลักฐานที่ขัดแย้งกับคำพูดนี้</span>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="text-center text-gray-600 font-mono text-lg animate-pulse">
-                            &lt; WAITING FOR SUBJECT SELECTION &gt;
-                        </div>
-                    )}
-                 </div>
+                  {/* Secret/Unclassified */}
+                  <div className="grid grid-cols-2 gap-3 opacity-60">
+                    <div className="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                      <h4 className="text-yellow-500 font-bold text-xs">SECRET (Level 2)</h4>
+                      <p className="text-[10px] text-gray-400">Users: DRM-01, SAK-91</p>
+                    </div>
+                    <div className="bg-gray-800 p-3 rounded border-l-4 border-green-500">
+                      <h4 className="text-green-500 font-bold text-xs">UNCLASSIFIED (Level 1)</h4>
+                      <p className="text-[10px] text-gray-400">Users: PRASERT, TU-STD</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center text-xs text-gray-500 italic mt-2">
+                   "Level 1 User cannot read Level 3 File (No Read Up)"
+                </div>
               </div>
+            )}
 
-              {/* EVIDENCE SELECTOR (Bottom Bar) */}
-              <div className="h-40 bg-zinc-900 border-t border-red-900/50 p-4 shrink-0 z-30">
-                  <div className="max-w-6xl mx-auto flex items-center gap-4 h-full">
-                      <div className="shrink-0 w-32 text-right border-r border-gray-700 pr-4">
-                          <h4 className="text-primary font-black uppercase text-sm">หลักฐาน</h4>
-                          <p className="text-[10px] text-gray-500">Evidence Bag</p>
+            {/* 4. ABAC (Focus: MANAT) */}
+            {activeTab === 'ABAC' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                  <h3 className="text-primary font-bold">POLICY DEFINITION (ABAC)</h3>
+                  <span className="text-xs text-gray-500">Lab Ventilation System</span>
+                </div>
+
+                <div className="bg-black p-4 rounded-lg font-mono text-xs border border-gray-700 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-2 bg-red-900/80 text-white text-[10px] font-bold">
+                     LAST EDITED BY: DRM-01
+                   </div>
+                   <div className="space-y-1">
+                      <span className="text-purple-400">if</span> (User.Role == <span className="text-green-400">"ADMIN"</span>) <span className="text-yellow-400">{`{`}</span>
+                      
+                      <div className="pl-4 border-l border-gray-800 ml-1 py-1">
+                        <span className="text-gray-500">// Normal Safety Rule</span>
+                        <br/>
+                        <span className="text-purple-400">if</span> (Sensor.Toxin &gt; 50) <span className="text-blue-400">return</span> <span className="text-green-400">"OPEN_VENT"</span>;
+                        
+                        <br/><br/>
+                        <span className="text-gray-500">// Special Override inserted by Manat</span>
+                        <br/>
+                        <span className="text-purple-400">if</span> (Environment.Mode == <span className="text-red-500 font-bold">"ANCIENT_RITUAL"</span>) <span className="text-yellow-400">{`{`}</span>
+                        <div className="pl-4">
+                           <span className="text-blue-400">return</span> <span className="text-red-500 font-bold">"CLOSE_VENT_LOCK_DOOR"</span>;
+                           <br/>
+                           <span className="text-gray-500">// Reason: "Keep humidity for script preservation"</span>
+                        </div>
+                        <span className="text-yellow-400">{`}`}</span>
                       </div>
                       
-                      <div className="flex-1 flex gap-4 overflow-x-auto pb-2 custom-scrollbar items-center">
-                          {EVIDENCE_INVENTORY.map(ev => (
-                              <button
-                                key={ev.id}
-                                onClick={() => !allBroken && setSelectedEvidenceId(ev.id)}
-                                className={`shrink-0 w-48 h-24 border rounded-lg p-3 flex flex-col justify-between text-left transition-all relative group ${
-                                    selectedEvidenceId === ev.id 
-                                    ? 'bg-primary text-black border-primary scale-105 shadow-[0_0_15px_rgba(34,211,238,0.5)]' 
-                                    : 'bg-black border-gray-700 text-gray-400 hover:border-gray-500'
-                                }`}
-                              >
-                                  <div className="font-bold text-xs uppercase truncate w-full">{ev.name}</div>
-                                  <div className="text-[9px] line-clamp-2 opacity-80">{ev.desc}</div>
-                                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <span className="material-symbols-outlined text-sm">inventory_2</span>
-                                  </div>
-                              </button>
-                          ))}
-                      </div>
-
-                      <div className="shrink-0 pl-4 border-l border-gray-700">
-                          {allBroken ? (
-                              <button 
-                                onClick={() => setViewState('VERDICT')}
-                                className="bg-red-600 hover:bg-red-500 text-white font-black h-20 w-40 rounded-xl text-xl uppercase italic shadow-[0_0_20px_rgba(220,38,38,0.4)] animate-pulse"
-                              >
-                                  DECIDE<br/>FATE
-                              </button>
-                          ) : (
-                              <button 
-                                onClick={handlePresentEvidence}
-                                disabled={Boolean(!selectedEvidenceId || !selectedSuspectId || (selectedSuspectId && suspects.find(s=>s.id===selectedSuspectId)?.isBroken))}
-                                className="bg-white hover:bg-gray-200 disabled:bg-gray-800 disabled:text-gray-600 text-black font-black h-20 w-40 rounded-xl text-lg uppercase italic transition-all active:scale-95 flex flex-col items-center justify-center"
-                              >
-                                  <span className="material-symbols-outlined text-2xl mb-1">gavel</span>
-                                  CATCH LIE
-                              </button>
-                          )}
-                      </div>
-                  </div>
+                      <span className="text-yellow-400">{`}`}</span>
+                   </div>
+                </div>
               </div>
-            </>
-          )}
-        </section>
+            )}
 
-        {/* RIGHT PANEL: LOGS (Optional/Collapsible) */}
-        <aside className="xl:block w-72 bg-black border-l border-red-900/20 p-4 font-mono text-xs overflow-hidden flex flex-col hidden">
-            <h3 className="text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-800 pb-2">Analysis Log</h3>
-            <Terminal title="TRUTH_SEEKER_v1.0" lines={logs} />
-        </aside>
+          </div>
+        </div>
 
-      </main>
+        {/* RIGHT: ACTION PANEL */}
+        <div className="w-full lg:w-80 bg-gray-900 border border-gray-700 rounded-xl p-6 flex flex-col gap-4 shrink-0 h-fit">
+          <h3 className="text-white font-bold flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">keyboard</span>
+            ระบุคำตอบ
+          </h3>
+          
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+            placeholder="พิมพ์รหัส/ชื่อ/ตัวแปร..."
+            className="w-full bg-black border border-gray-600 focus:border-primary text-white p-3 rounded-lg outline-none font-mono text-sm"
+            autoFocus
+          />
 
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #000; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
-        
-        .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-        
-        .blood-shadow { text-shadow: 0 0 10px rgba(220, 38, 38, 0.8), 0 0 20px rgba(220, 38, 38, 0.4); }
-      `}</style>
+          <button
+            onClick={handleVerify}
+            disabled={isVerifying || !inputValue}
+            className="w-full bg-primary hover:bg-white text-black font-black py-3 rounded-lg transition-all uppercase tracking-wider text-sm shadow-lg shadow-primary/20"
+          >
+            {isVerifying ? 'Checking...' : 'ยืนยันข้อมูล'}
+          </button>
+
+          {/* Feedback Area */}
+          <div className={`mt-2 p-4 rounded-lg text-sm min-h-[100px] flex items-center justify-center text-center transition-all duration-300 ${
+            feedback.type === 'success' ? 'bg-green-950/50 border border-green-500/50 text-green-200' : 
+            feedback.type === 'error' ? 'bg-red-950/50 border border-red-500/50 text-red-200' :
+            'bg-black/30 text-gray-500 border border-gray-800'
+          }`}>
+             {feedback.msg || "รอการป้อนข้อมูล..."}
+          </div>
+
+          {/* Character Status Tracker */}
+          <div className="mt-4 border-t border-gray-800 pt-4">
+             <h4 className="text-[10px] text-gray-500 font-bold uppercase mb-2">Suspect Status</h4>
+             <div className="space-y-2">
+                <div className={`flex justify-between text-[10px] ${currentStage > 0 ? 'text-gray-500 line-through' : 'text-white'}`}>
+                  <span>Sak & Kampan</span>
+                  <span>{currentStage > 0 ? 'CLEARED' : 'PENDING'}</span>
+                </div>
+                <div className={`flex justify-between text-[10px] ${currentStage > 1 ? 'text-gray-500 line-through' : 'text-white'}`}>
+                  <span>Prasert</span>
+                  <span>{currentStage > 1 ? 'WITNESS' : 'PENDING'}</span>
+                </div>
+                <div className={`flex justify-between text-[10px] ${currentStage > 2 ? 'text-red-400 font-bold' : 'text-white'}`}>
+                  <span>VP Thawat</span>
+                  <span>{currentStage > 2 ? 'IDENTIFIED' : 'PENDING'}</span>
+                </div>
+                <div className={`flex justify-between text-[10px] ${currentStage > 3 ? 'text-red-500 font-black' : 'text-white'}`}>
+                  <span>Manat</span>
+                  <span>{currentStage > 3 ? 'GUILTY' : 'PENDING'}</span>
+                </div>
+             </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };
 
-export default RevelationView;
+export default AuthzView;
