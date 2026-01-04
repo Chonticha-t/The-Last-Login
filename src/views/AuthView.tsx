@@ -42,7 +42,7 @@ const AuthView: React.FC<AuthViewProps> = ({ status, onComplete, onRequestHint }
       authType: "Base64 Decoding",
       icon: "person",
       description: "คอมพิวเตอร์เก่ามีข้อความ Encode ทิ้งไว้ในไฟล์ประวัติเพื่อพรางรหัสผ่าน",
-      challenge: "ถอดรหัส Base64 ของ 'VkVOR0FOQ0U=' (ค่านามธรรมของความแค้น)",
+      challenge: "ถอดรหัส Base64 ของ 'VkVOR0FOQ0U=' ",
       answer: "VENGEANCE",
       hint: "รหัสถูกซ่อนอยู่ในไฟล์ ประวัติ_คำปัน.TXT",
       evidence: ["บทสวดดั้งเดิม", "จดหมายถึงลูกชาย"],
