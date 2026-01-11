@@ -26,11 +26,11 @@ const CORPSES_DATA = [
     cryptoType: "SYMMETRIC ENCRYPTION",
     iconName: "landslide",
     difficulty: "Easy",
-    description: "ไฟล์ผลชันสูตรถูกเข้ารหัส XOR. Key คือคำภาษาอังกฤษ 5 ตัวอักษร (เกี่ยวกับทิศที่พบศพ)",
+    description: "ไฟล์ผลชันสูตรถูกเข้ารหัส XOR. จงหากุญแจที่เมื่อคำนวณแล้ว จะคืนค่าออกมาเป็น 'ชื่อทิศ' ที่พบศพรายนี้",
     challengeData: {
-      ciphertext: "17 1A 06 0B 1B 1C 17 1D 1A 1B",
-      hint: "Key เป็นชื่อภาษาอังกฤษของทิศทางนี้ (5 ตัวอักษร)",
-      solution: "SUFFOCATION"
+      ciphertext: "09 1D 1D 01 06",
+      hint: "ไฟล์ผลชันสูตรถูกเข้ารหัส XOR. จงหากุญแจที่เมื่อคำนวณแล้ว จะคืนค่าออกมาเป็น 'ชื่อทิศ' ที่พบศพรายนี้ \n Answer XXXXX(+D)",
+      solution: "GROUND"
     },
     autopsyFindings: [
       "สภาพศพ: ถูกฝังดินลึกระดับไหล่ เหลือเพียงศีรษะโผล่พ้นดิน มีสัญลักษณ์รูปสามเหลี่ยมหัวคว่ำมีขีดกลางจารึกที่หน้าผาก",
@@ -40,9 +40,9 @@ const CORPSES_DATA = [
       "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
     ],
     poem: `ทิศอุดร ป้อนธรณี พลีธาตุดิน 
-  ฝังกายสิ้น ลงลึก ผนึกหมาย 
-  เหลือเพียงเศียร พ้นพื้น ยืนท้าทาย 
-  ดูดชีพวาย ใต้หล้า กลับมาเป็น`,
+          ฝังกายสิ้น ลงลึก ผนึกหมาย 
+          เหลือเพียงเศียร พ้นพื้น ยืนท้าทาย 
+          ดูดชีพวาย ใต้หล้า กลับมาเป็น`,
     calendarImg: death01 // ผูกรูปที่ 1
   },
   {
@@ -246,70 +246,114 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
       </div>
     </div>
   );
+ const calculateXOR = (hexStr: string, keyChar: string) => {
+  if (!keyChar) return '?';
+  const cipherVal = parseInt(hexStr, 16);
+  // ใช้ตัวพิมพ์ใหญ่เพื่อให้ค่า ASCII นิ่ง
+  const keyVal = keyChar.toUpperCase().charCodeAt(0); 
+  const result = cipherVal ^ keyVal;
+  return String.fromCharCode(result);
+};
+
+const getCharHex = (char: string) => 
+  char ? char.toUpperCase().charCodeAt(0).toString(16).toUpperCase() : '00';
 
   const renderChallenge = () => {
-    const corpse = CORPSES_DATA[selectedCorpseId];
-    return (
-      <div className="flex flex-col h-full min-h-[85vh] p-10 bg-black animate-in fade-in zoom-in duration-300">
-        <div className="flex items-center justify-between border-b border-red-900/50 pb-8 mb-10">
-          <div className="flex items-center gap-6">
-            <MaterialIcon icon="terminal" className="text-5xl text-red-700" />
-            <div>
-              <h2 className="text-4xl font-bold text-gray-200 tracking-widest font-mono uppercase">CIPHER_NODE: {corpse.direction}</h2>
-              <p className="text-red-900 text-sm font-mono uppercase tracking-widest">ELEMENT: {corpse.element} | DIFFICULTY: {corpse.difficulty}</p>
-            </div>
+  const corpse = CORPSES_DATA[selectedCorpseId];
+  return (
+    <div className="flex flex-col h-full min-h-[85vh] p-10 bg-black animate-in fade-in zoom-in duration-300">
+      <div className="flex items-center justify-between border-b border-red-900/50 pb-8 mb-10">
+        <div className="flex items-center gap-6">
+          <MaterialIcon icon="terminal" className="text-5xl text-red-700" />
+          <div>
+            <h2 className="text-4xl font-bold text-gray-200 tracking-widest font-mono uppercase">CIPHER_NODE: {corpse.direction}</h2>
+            <p className="text-red-900 text-sm font-mono uppercase tracking-widest">ELEMENT: {corpse.element} | DIFFICULTY: {corpse.difficulty}</p>
           </div>
-          <button onClick={() => setView('MAP')} className="text-gray-500 hover:text-white font-mono text-xs border border-gray-800 px-6 py-3 hover:border-gray-500 transition-all uppercase tracking-tighter">
-            [ TERMINATE_LINK ]
-          </button>
+        </div>
+        <button onClick={() => setView('MAP')} className="text-gray-500 hover:text-white font-mono text-xs border border-gray-800 px-6 py-3 hover:border-gray-500 transition-all uppercase tracking-tighter">
+          [ TERMINATE_LINK ]
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col md:flex-row gap-12">
+        <div className="w-full md:w-1/2 flex flex-col gap-10">
+          <div className="bg-zinc-900/30 border border-red-900/30 p-10 rounded-sm relative overflow-hidden glass-panel">
+            <div className="absolute top-0 left-0 w-2 h-full bg-red-700"></div>
+            <h3 className="text-red-600 font-mono text-sm mb-6 flex items-center gap-2 uppercase tracking-widest">
+              <MaterialIcon icon="enhanced_encryption" /> ENCRYPTED_DATA
+            </h3>
+            <div className="font-mono text-gray-400 text-3xl leading-relaxed break-all bg-black/60 p-8 border border-gray-800 shadow-inner italic">
+              {corpse.id === 2 ? corpse.challengeData.ciphertextDisplay : corpse.challengeData.ciphertext}
+            </div>
+
+            {/* --- ส่วนที่เพิ่ม: Hacker's XOR Visualizer (เครื่องคิดเลข) --- */}
+            {selectedCorpseId === 0 && (
+              <div className="mt-8 bg-black/80 border border-red-900/50 p-6 rounded-lg font-mono shadow-2xl">
+                <div className="flex items-center gap-2 mb-4 border-b border-red-900/30 pb-2">
+                  <MaterialIcon icon="terminal" className="text-red-600 text-sm" />
+                  <span className="text-red-500 text-xs font-black uppercase tracking-[0.2em]">Live_XOR_Decoder_v1.0</span>
+                </div>
+                
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-11 gap-2">
+                  {corpse.challengeData.ciphertext.split(' ').map((hex, i) => {
+                    // คำนวณ XOR สดๆ ตามตัวอักษรที่พิมพ์
+                  const currentKeyChar = challengeInput[i % challengeInput.length] || '';
+                    const resultChar = calculateXOR(hex, currentKeyChar);
+                    
+                    return (
+                      <div key={i} className={`flex flex-col items-center p-2 border transition-all duration-300 ${currentKeyChar ? 'border-red-600 bg-red-900/20' : 'border-zinc-800 bg-black'}`}>
+                        <span className="text-[8px] text-zinc-600 mb-1 font-bold">HEX</span>
+                        <span className="text-xs text-white font-mono">{hex}</span>
+                        <div className="my-1 text-[8px] text-red-900 font-bold">⊕</div>
+                        <span className="text-[10px] text-primary font-mono font-bold">{getCharHex(currentKeyChar)}</span>
+                        <div className="w-full h-[1px] bg-zinc-800 my-2"></div>
+                        <span className={`text-2xl font-black ${currentKeyChar ? 'text-green-500 animate-pulse' : 'text-zinc-900'}`}>
+                          {resultChar}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-[10px] text-zinc-500 italic font-mono">* ระบบกำลังทำ Bitwise XOR ระหว่าง Ciphertext กับ Key ที่คุณป้อน...</p>
+              </div>
+            )}
+            {/* --- จบส่วนเครื่องคิดเลข --- */}
+          </div>
+
+          <div className="bg-zinc-900/10 border border-red-900/20 p-10 rounded-sm">
+            <h3 className="text-gray-500 font-mono text-xs mb-4 uppercase tracking-widest italic">INTEL_HINT:</h3>
+            <p className="text-gray-200 font-mono text-2xl italic">"{corpse.challengeData.hint}"</p>
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row gap-12">
-          <div className="w-full md:w-1/2 flex flex-col gap-10">
-            <div className="bg-zinc-900/30 border border-red-900/30 p-10 rounded-sm relative overflow-hidden glass-panel">
-              <div className="absolute top-0 left-0 w-2 h-full bg-red-700"></div>
-              <h3 className="text-red-600 font-mono text-sm mb-6 flex items-center gap-2 uppercase tracking-widest">
-                <MaterialIcon icon="enhanced_encryption" /> ENCRYPTED_DATA
-              </h3>
-              <div className="font-mono text-gray-400 text-3xl leading-relaxed break-all bg-black/60 p-8 border border-gray-800 shadow-inner italic">
-                {corpse.id === 2 ? corpse.challengeData.ciphertextDisplay : corpse.challengeData.ciphertext}
-              </div>
-            </div>
-
-            <div className="bg-zinc-900/10 border border-red-900/20 p-10 rounded-sm">
-              <h3 className="text-gray-500 font-mono text-xs mb-4 uppercase tracking-widest italic">INTEL_HINT:</h3>
-              <p className="text-gray-200 font-mono text-2xl italic">"{corpse.challengeData.hint}"</p>
-            </div>
+        <div className="w-full md:w-1/2 flex flex-col gap-8">
+          <div className="flex-1 bg-black border border-gray-800 shadow-2xl overflow-hidden rounded-xl min-h-[300px]">
+            <Terminal title={`REMOTE_ACCESS_NODE_0${corpse.id}`} lines={terminalLogs} />
           </div>
 
-          <div className="w-full md:w-1/2 flex flex-col gap-8">
-            <div className="flex-1 bg-black border border-gray-800 shadow-2xl overflow-hidden rounded-xl min-h-[300px]">
-              <Terminal title={`REMOTE_ACCESS_NODE_0${corpse.id}`} lines={terminalLogs} />
-            </div>
-
-            <div className="flex gap-0 shadow-2xl">
-              <div className="bg-red-900 text-black px-8 py-5 font-bold font-mono flex items-center text-2xl">{'>'}</div>
-              <input
-                type="text"
-                value={challengeInput}
-                onChange={(e) => setChallengeInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && submitChallenge()}
-                className="flex-1 bg-zinc-950 border-none text-red-500 font-mono px-8 py-5 text-3xl focus:outline-none placeholder-red-950/50 uppercase italic font-black"
-                placeholder="DECRYPT_KEY..."
-                autoFocus
-              />
-              <button
-                onClick={submitChallenge}
-                className="bg-red-800 hover:bg-red-700 text-black font-black font-mono px-12 py-5 text-2xl transition-all"
-              >
-                DECODE
-              </button>
-            </div>
+          <div className="flex gap-0 shadow-2xl">
+            <div className="bg-red-900 text-black px-8 py-5 font-bold font-mono flex items-center text-2xl">{'>'}</div>
+            <input
+              type="text"
+              value={challengeInput}
+              onChange={(e) => setChallengeInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && submitChallenge()}
+              className="flex-1 bg-zinc-950 border-none text-red-500 font-mono px-8 py-5 text-3xl focus:outline-none placeholder-red-950/50 uppercase italic font-black"
+              placeholder="DECRYPT_KEY..."
+              autoFocus
+            />
+            <button
+              onClick={submitChallenge}
+              className="bg-red-800 hover:bg-red-700 text-black font-black font-mono px-12 py-5 text-2xl transition-all"
+            >
+              DECODE
+            </button>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   const renderReport = () => {
     const corpse = CORPSES_DATA[selectedCorpseId];
