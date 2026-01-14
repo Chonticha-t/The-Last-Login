@@ -212,7 +212,7 @@ const BriefingView: React.FC<BriefingViewProps> = ({ onInvestigate }) => {
                 
                 <div className="bg-primary/5 p-8 rounded-3xl border border-primary/20 text-white italic">
                   <p className="text-2xl leading-relaxed font-display font-bold text-gray-200">
-                    "นักศึกษาทั้ง 3 คนที่เสียชีวิตเมื่อเดือนก่อน ล้วนเป็นเพื่อนสนิทของ <span className="text-primary border-b-2 border-primary">'ตุ๊'</span> นักศึกษาที่เสียชีวิตไปเมื่อ 2 ปีก่อน"
+                    "นักศึกษาทั้ง 3 คนที่เสียชีวิตเมื่อเดือนก่อน ล้วนเป็นเพื่อนสนิทของ <span className="text-primary border-b-2 border-primary">'ตุ๊'</span> นักศึกษาที่เสียชีวิตไปเมื่อ 5 วันก่อน"
                   </p>
                 </div>
 

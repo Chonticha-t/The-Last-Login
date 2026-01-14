@@ -75,9 +75,12 @@ const MissionMapView: React.FC<MissionMapViewProps> = ({ status, onEnterStage })
                   <h3 className={`text-2xl font-black tracking-tight uppercase italic ${stage.completed ? 'text-primary' : isActive ? 'text-white' : 'text-gray-800'}`}>
                     {stage.label}
                   </h3>
-                  {isActive ? (
-                    <button onClick={() => onEnterStage(stage.id)} className="bg-primary hover:bg-white text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-4 shadow-2xl shadow-primary/30 transition-all transform hover:scale-110 active:scale-95">
-                      เริ่มภารกิจ
+                  {(isActive || stage.completed) ? (
+                    <button 
+                      onClick={() => onEnterStage(stage.id)} 
+                      className={`px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-4 shadow-2xl transition-all transform hover:scale-110 active:scale-95 ${isActive ? 'bg-primary hover:bg-white text-black shadow-primary/30' : 'bg-white/10 hover:bg-white/20 text-white shadow-primary/20 border border-primary/40'}`}
+                    >
+                      {isActive ? 'เริ่มภารกิจ' : 'เปิดดูอีกครั้ง'}
                       <span className="material-symbols-outlined text-lg font-black">arrow_forward_ios</span>
                     </button>
                   ) : (
