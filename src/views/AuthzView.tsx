@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import type { CaseStatus } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
 import StageHeader from '../components/StageHeader';
+import EvidenceModal from '../components/EvidenceModal';
+import type { CaseStatus } from '../types';
 
 interface AuthzViewProps {
   status: CaseStatus;
@@ -8,308 +9,501 @@ interface AuthzViewProps {
   onRequestHint: () => void;
 }
 
-type TabType = 'MATRIX' | 'RBAC' | 'MLS' | 'ABAC';
-
-const GlitchText: React.FC<{ text: string }> = ({ text }) => (
-  <span className="relative inline-block group">
-    <span className="relative z-10">{text}</span>
-    <span className="absolute top-0 left-0 -z-10 w-full h-full text-red-500 opacity-70 animate-pulse translate-x-[2px]">{text}</span>
-    <span className="absolute top-0 left-0 -z-10 w-full h-full text-cyan-500 opacity-70 animate-pulse -translate-x-[2px] delay-100">{text}</span>
-  </span>
-);
+type HackPhase = 'NETWORK' | 'COOKIE' | 'WEBSHELL_INFO' | 'TERMINAL';
 
 const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('MATRIX');
-  const [inputValue, setInputValue] = useState('');
-  const [currentStage, setCurrentStage] = useState(0);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | null; msg: string }>({ type: null, msg: '' });
-  const [showArchive, setShowArchive] = useState(false);
+  const [phase, setPhase] = useState<HackPhase>('NETWORK');
+  
+  // --- LOGIC: NETWORK ---
+  const [netLogs, setNetLogs] = useState<string[]>([
+    '[SYSTEM] Initializing secure connection adapter...',
+    '[INFO] Loading configuration: NOD-77_INTERNAL_PROFILE',
+    '[WARN] Target unreachable at default gateway.',
+    '[ERROR] Connection handshake failed. Target refused connection on port 80.',
+    '[HINT] Manual override required via Developer Console.'
+  ]);
 
-  // ข้อมูลสืบสวน 4 ขั้นตอน (ปรับแต่ง Logic ให้สอดคล้องกับพล็อต)
-  const anomalies = [
-    {
-      id: 1,
-      concept: "Access Control Matrix (DAC)",
-      alert: "LOG_ALERT: พบความพยายามเข้าใช้ห้อง Lab ในช่วงเวลาวิกาล",
-      question: "ตรวจสอบ Matrix: อ.ศักดิ์ (SAK-91) สามารถเข้าไปใน Lab ในช่วงเวลา '03:00 น.' ได้หรือไม่? (YES/NO)",
-      correctTab: 'MATRIX',
-      ans: ["NO", "DENY"],
-      explanation: "ถูกต้อง! แม้เขาจะมีสิทธิ์เข้าในเวลาปกติ แต่ช่วงเวลาตี 3 สิทธิ์เขาคือ 'DENY' เขาเข้าไม่ได้... ฆาตกรต้องเป็นคนที่มีสิทธิ์แบบ 24 ชม.!"
-    },
-    {
-      id: 2,
-      concept: "Role-Based Access Control (RBAC)",
-      alert: "LOG_ALERT: ระบบสัญญาณเตือนภัย (Emergency) ไม่ส่งสัญญาณออกสู่ภายนอก",
-      question: "ตรวจสอบ Role: Permission ใดของประเสริฐ (INTERN) ที่ถูกแอบ Redirect ไปยังค่าว่าง (Null) ?",
-      correctTab: 'RBAC',
-      ans: ["EMERGENCY_BROADCAST", "EMERGENCY"],
-      explanation: "ถูกต้อง! สิทธิ์ของเขายังอยู่แต่ถูกแอบเบี่ยงเบนสัญญาณ (Redirect) ทำให้เขากดปุ่มไปก็ไร้ความหมาย... มีคนวางแผนตัดการสื่อสารล่วงหน้า"
-    },
-    {
-      id: 3,
-      concept: "Multilevel Security (MLS)",
-      alert: "LOG_ALERT: ไฟล์ข้อมูลโครงการที่ผิดพลาดถูกยกระดับชั้นความลับ",
-      question: "ตรวจสอบ MLS: ไฟล์รายงานความเสี่ยงอาคเนย์ถูกย้ายไปที่ Security Label ระดับใด?",
-      correctTab: 'MLS',
-      ans: ["TOP-SECRET", "LEVEL 3", "LEVEL3"],
-      explanation: "ถูกต้อง! รองฯ ธวัชใช้สิทธิ์ระดับสูงเพื่อซ่อนไฟล์ความผิดพลาดของโครงการ... เขาปกปิดเพื่อตำแหน่ง แต่เขาไม่ใช่คนแก้ Code ระบบอากาศ"
-    },
-    {
-      id: 4,
-      concept: "Attribute-Based (ABAC)",
-      alert: "FINAL ANALYSIS: ตรวจพบเงื่อนไข Override ในนโยบายควบคุมระบบอาคาร",
-      question: "ตรวจสอบ Policy: เงื่อนไข 'ANCIENT_RITUAL' ถูกแอบแทรกโดย UserID ใด?",
-      correctTab: 'ABAC',
-      ans: ["DRM-01", "DRM01", "MANAS"],
-      explanation: "จับได้แล้ว! DRM-01 หรือ ดร.มนัส คือคนเดียวที่มีสิทธิ์เข้าถึง ABAC Policy เขาเขียน Code สังหารนักศึกษาโดยใช้พิธีกรรมบังหน้า!"
+  useEffect(() => {
+    if (phase === 'NETWORK') {
+      (window as any).inject_packet = (ip: string, port: string) => {
+        console.log(`[DEBUG] Override initiated > ${ip}:${port}`);
+        
+        if (ip === '192.168.1.10' && port === '8080') {
+          console.log('[SUCCESS] Handshake accepted.');
+          setNetLogs(prev => [...prev, `[INFO] Override success: Connected to ${ip}:${port}`, '[INFO] Authenticating...']);
+          setTimeout(() => setPhase('COOKIE'), 1500);
+          return "Connection Established";
+        } else {
+          console.error('[FAIL] Connection refused.');
+          setNetLogs(prev => [...prev, `[ERROR] Connection refused: ${ip}:${port}`]);
+          return "Connection Refused";
+        }
+      };
+      
+      console.clear();
+      console.log('--- NOD-77 DEBUG CONSOLE ---');
+      console.log('To bypass the firewall, use the manual injection method:');
+      console.log('window.inject_packet("TARGET_IP", "TARGET_PORT")');
     }
-  ];
+  }, [phase]);
 
-  const handleVerify = () => {
-    setIsVerifying(true);
-    const stage = anomalies[currentStage];
+  // --- LOGIC: COOKIE ---
+  const [cookieStatus, setCookieStatus] = useState<'LOCKED' | 'UNLOCKED'>('LOCKED');
 
-    if (activeTab !== stage.correctTab) {
-      setFeedback({ type: 'error', msg: `⛔ ข้อมูลไม่ได้อยู่ที่แท็บนี้ ลองเช็คที่ ${stage.concept}` });
-      setIsVerifying(false);
-      return;
+  useEffect(() => {
+    if (phase === 'COOKIE') {
+      document.cookie = "session_id=xe8-991-zc2; path=/";
+      document.cookie = "user_role=guest; path=/";
+      document.cookie = "department=external; path=/";
+
+      const interval = setInterval(() => {
+        const cookies = document.cookie.split(';').reduce((acc, current) => {
+          const [name, value] = current.trim().split('=');
+          acc[name] = value;
+          return acc;
+        }, {} as Record<string, string>);
+
+        if (cookies['user_role'] === 'admin') {
+          setCookieStatus('UNLOCKED');
+          clearInterval(interval);
+          // หมายเหตุ: ลบ setTimeout ออก เพื่อให้ผู้เล่นกดปุ่มเองใน renderPortalUI
+        }
+      }, 500);
+      return () => clearInterval(interval);
     }
+  }, [phase]);
 
-    setTimeout(() => {
-      const isCorrect = stage.ans.some(a => inputValue.trim().toUpperCase().includes(a));
-      if (isCorrect) {
-        setFeedback({ type: 'success', msg: stage.explanation });
-        setTimeout(() => {
-          if (currentStage < anomalies.length - 1) {
-            setCurrentStage(prev => prev + 1);
-            setInputValue('');
-            setFeedback({ type: null, msg: '' });
-          } else {
-            onComplete();
-          }
-        }, 3500);
-      } else {
-        setFeedback({ type: 'error', msg: "❌ การวิเคราะห์ผิดพลาด กรุณาตรวจสอบค่าในระบบให้ละเอียด" });
+  // --- LOGIC: WEBSHELL ---
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installProgress, setInstallProgress] = useState(0);
+
+  const startInstallation = () => {
+    setIsInstalling(true);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 2; // ความเร็วในการโหลด
+      if (progress > 100) progress = 100;
+      setInstallProgress(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => setPhase('TERMINAL'), 800);
       }
-      setIsVerifying(false);
-    }, 800);
+    }, 50);
   };
 
-  return (
-    <div className={`min-h-screen font-mono flex flex-col p-4 md:p-8 gap-6 transition-colors duration-1000 ${currentStage === 3 ? 'bg-red-950/20' : 'bg-black'} text-gray-200`}>
-      <StageHeader stageName="Security Audit: วิเคราะห์สิทธิ์การเข้าถึง" stageNumber={3} timer={status.timer} hintsUsed={status.hintsUsed} onRequestHint={onRequestHint} />
+  // --- LOGIC: TERMINAL ---
+  const [logs, setLogs] = useState<string[]>(['NOD-77 Server (Ubuntu 20.04 LTS)', 'Last login: Yesterday from 192.168.1.5']);
+  const [input, setInput] = useState('');
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const [filePerms, setFilePerms] = useState('----------');
+  const [fileOwner, setFileOwner] = useState('manas');
 
-      {/* Narrative Banner */}
-      <div className={`border-l-4 p-6 rounded-r-xl shadow-lg transition-all duration-500 ${currentStage === 3 ? 'bg-red-900/10 border-red-500' : 'bg-gray-900 border-primary'}`}>
-        <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-          <span className={`text-xs font-black px-2 py-1 rounded uppercase ${currentStage === 3 ? 'bg-red-600 text-black animate-pulse' : 'bg-primary text-black'}`}>
-            PHASE {currentStage + 1}/4
-          </span>
+  const getRealSystemTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const rawCmd = input.trim();
+    if (!rawCmd) return;
+    setLogs(prev => [...prev, `root@nod-77:~# ${rawCmd}`]);
+    setInput('');
+
+    const parts = rawCmd.split(' ');
+    const cmd = parts[0].toLowerCase();
+    const arg1 = parts[1] || '';
+    const arg2 = parts[2] || '';
+
+    // Command Logic
+    if (cmd === 'ls') {
+        if (arg1 === '-l') {
+            addLog(`total 16`);
+            addLog(`drwxr-xr-x  2 root   root    4096 ${getRealSystemTime()} .`);
+            addLog(`drwxr-xr-x  4 root   root    4096 ${getRealSystemTime()} ..`);
+            addLog(`${filePerms}  1 ${fileOwner}  users   1024 Jan 14 03:00 ritual_plan_final.txt`);
+        } else {
+            addLog('ritual_plan_final.txt');
+        }
+    } else if (cmd === 'chown') {
+        if (arg1 === 'root' && arg2.startsWith('ritual')) {
+            setFileOwner('root');
+            addLog('Changed ownership of ritual_plan_final.txt to root');
+        } else {
+            addLog(`chown: invalid user or file`);
+        }
+    } else if (cmd === 'chmod') {
+        if (fileOwner !== 'root') {
+             addLog(`chmod: changing permissions of '${arg2 || arg1}': Operation not permitted`);
+        } else if (arg1 === '777' && arg2.startsWith('ritual')) {
+                setFilePerms('-rwxrwxrwx');
+                addLog('mode of ritual_plan_final.txt changed to 0777 (rwxrwxrwx)');
+        } else {
+                addLog('chmod: invalid mode or file');
+        }
+    } else if (cmd === 'date') {
+        addLog(`${new Date().toString()}`);
+    } else if (cmd === 'cat') {
+        if (arg1.startsWith('ritual')) {
+            if (filePerms === '----------') {
+                addLog('cat: ritual_plan_final.txt: Permission denied');
+            } else {
+                const currentTime = getRealSystemTime();
+                if (currentTime.startsWith('03')) {
+                    addLog('Opening file...');
+                    setTimeout(() => setEvidenceOpen(true), 1000);
+                } else {
+                    addLog('Access Denied: Temporal Lock Active (Required: 03:00-03:59)');
+                }
+            }
+        } else {
+             addLog('cat: No such file or directory');
+        }
+    } else if (cmd === 'help') {
+        addLog('Shell commands: ls -l, chown root [file], chmod 777 [file], cat [file], date');
+    } else {
+        addLog(`${cmd}: command not found`);
+    }
+  };
+  const addLog = (msg: string) => setLogs(prev => [...prev, msg]);
+
+
+  // --- UI RENDERERS ---
+
+  // UI 1: Network Connection
+  const renderNetworkUI = () => (
+    <div className="w-full max-w-4xl bg-[#1e1e1e] rounded-lg shadow-2xl border border-[#333] overflow-hidden font-sans flex flex-col h-[600px]">
+      <div className="bg-[#2d2d2d] px-4 py-2 flex items-center justify-between border-b border-[#333]">
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+          </div>
+          <span className="text-gray-400 text-xs font-medium ml-2">NOD-77 Secure Gateway Client v3.1</span>
         </div>
-        <h2 className={`text-xl md:text-2xl font-bold mb-2 ${currentStage === 3 ? 'text-red-500' : 'text-white'}`}>
-          {currentStage === 3 ? <GlitchText text={anomalies[currentStage].alert} /> : anomalies[currentStage].alert}
-        </h2>
-        <p className="text-primary/90 text-sm md:text-base font-bold border-t border-gray-700 pt-4 mt-2">
-          <span className="text-gray-500 mr-2">$ QUEST:</span> {anomalies[currentStage].question}
-        </p>
+        <div className="text-xs text-gray-500">Disconnected</div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
-        
-        {/* LEFT: EVIDENCE VIEWER */}
-        <div className={`flex-1 bg-gray-900 rounded-xl border flex flex-col overflow-hidden transition-all ${currentStage === 3 ? 'border-red-600 shadow-[0_0_20px_rgba(255,0,0,0.3)]' : 'border-gray-700'}`}>
-          <div className="flex border-b border-gray-700 bg-black overflow-x-auto">
-            {(['MATRIX', 'RBAC', 'MLS', 'ABAC'] as TabType[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-4 px-4 text-xs font-bold transition-all border-r border-gray-800 relative
-                  ${activeTab === tab ? (currentStage === 3 ? 'bg-red-900/30 text-red-500' : 'bg-gray-800 text-primary') : 'text-gray-500'}
-                `}
-              >
-                {activeTab === tab && <div className={`absolute top-0 left-0 w-full h-1 ${currentStage === 3 ? 'bg-red-500' : 'bg-primary'}`}></div>}
-                {tab}
-              </button>
+      <div className="flex flex-1 p-8 gap-8">
+        <div className="w-1/3 space-y-6 border-r border-[#333] pr-6">
+           <div className="text-center p-6 bg-[#252526] rounded-lg border border-[#333]">
+             <div className="w-20 h-20 bg-[#333] rounded-full mx-auto mb-4 flex items-center justify-center">
+               <span className="material-symbols-outlined text-4xl text-gray-500">lan</span>
+             </div>
+             <h2 className="text-gray-200 font-bold mb-1">Internal Lab Network</h2>
+             <p className="text-red-400 text-xs font-medium flex items-center justify-center gap-1">
+               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+               Connection Failed
+             </p>
+           </div>
+
+           <div className="space-y-3">
+             <div className="text-xs text-gray-500 uppercase tracking-wider font-bold">Connection Details</div>
+             <div className="flex justify-between text-sm text-gray-400 border-b border-[#333] pb-2">
+               <span>Target Host</span>
+               <span className="font-mono text-red-400">UNKNOWN</span>
+             </div>
+             <div className="flex justify-between text-sm text-gray-400 border-b border-[#333] pb-2">
+               <span>Port</span>
+               <span className="font-mono text-red-400">N/A</span>
+             </div>
+           </div>
+        </div>
+
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 bg-black rounded border border-[#333] p-4 font-mono text-xs text-gray-300 overflow-y-auto mb-4">
+            {netLogs.map((log, i) => (
+              <div key={i} className="mb-1">
+                <span className="text-gray-600 mr-2">{new Date().toLocaleTimeString()}</span>
+                <span className={log.includes('ERROR') ? 'text-red-400' : log.includes('INFO') ? 'text-blue-400' : 'text-gray-300'}>
+                  {log}
+                </span>
+              </div>
             ))}
           </div>
 
-          <div className="flex-1 p-6 overflow-y-auto bg-black/40 text-sm">
-            {activeTab === 'MATRIX' && (
-              <div className="space-y-4 animate-in fade-in">
-                <h3 className="text-primary font-bold border-b border-gray-700 pb-2 uppercase text-xs">Access Control Matrix (Time-Sensitive)</h3>
-                <table className="w-full text-left border-collapse text-[11px] md:text-sm">
-                  <thead className="text-gray-500 bg-white/5 uppercase">
-                    <tr>
-                        <th className="p-3">User_ID</th>
-                        <th className="p-3 text-center">08:00 - 18:00</th>
-                        <th className="p-3 text-center">22:00 - 05:00</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800">
-                    <tr>
-                        <td className="p-3 font-bold text-white">SAK-91 (อ.ศักดิ์)</td>
-                        <td className="p-3 text-center text-green-400">ALLOW</td>
-                        <td className="p-3 text-center font-bold text-red-500 bg-red-950/20">DENY</td>
-                    </tr>
-                    <tr>
-                        <td className="p-3 font-bold text-white">PRASERT (รปภ.)</td>
-                        <td className="p-3 text-center text-green-400">ALLOW</td>
-                        <td className="p-3 text-center text-green-400">ALLOW</td>
-                    </tr>
-                    <tr className="bg-white/5">
-                        <td className="p-3 font-bold text-white">DRM-01 (ดร.มนัส)</td>
-                        <td className="p-3 text-center text-green-400 font-bold">ALLOW</td>
-                        <td className="p-3 text-center text-green-400 font-bold">ALLOW</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p className="text-[10px] text-gray-500 italic mt-2">* ระบบ DAC กำหนดสิทธิ์รายบุคคลตามช่วงเวลาที่ได้รับอนุมัติภารกิจเท่านั้น</p>
-              </div>
-            )}
-
-            {activeTab === 'RBAC' && (
-              <div className="space-y-4 animate-in fade-in">
-                <h3 className="text-primary font-bold border-b border-gray-700 pb-2 uppercase text-xs">Role Permissions (RBAC)</h3>
-                <div className="p-4 bg-white/5 rounded border border-gray-800">
-                  <span className="text-blue-400 font-bold uppercase">Role Assignment: Intern_Guard</span>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="px-2 py-1 bg-gray-700 rounded text-[10px]">READ_LOGS</span>
-                    <span className="px-2 py-1 bg-gray-700 rounded text-[10px]">PHYSICAL_ACCESS</span>
-                    <span className="px-2 py-1 bg-red-900/40 border border-red-500/50 text-red-400 rounded text-[10px] font-bold">
-                        EMERGENCY_BROADCAST (⚠️ Redirected to NULL)
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-4 leading-relaxed">
-                    * หมายเหตุ: สัญญาณเตือนภัยถูกเบี่ยงเบน (Signal Redirection) โดยสิทธิ์ระดับ Admin เพื่อการซ่อมบำรุงระบบอากาศล่วงหน้า
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'MLS' && (
-              <div className="space-y-4 animate-in fade-in">
-                <h3 className="text-primary font-bold border-b border-gray-700 pb-2 uppercase text-xs">Security Clearance Levels</h3>
-                <div className="bg-gradient-to-r from-red-950/50 to-transparent border-l-4 border-red-600 p-4 rounded">
-                  <h4 className="text-red-500 font-black text-xs mb-1 uppercase tracking-tighter">Level 3: Top-Secret (Restricted Access)</h4>
-                  <p className="text-[10px] text-gray-400">Authorized: Vice_Tawat, Admin_Manas</p>
-                  <div className="mt-3 space-y-2">
-                    <div className="text-red-200 text-[11px] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">visibility_off</span> 
-                        RISK_ANALYSIS_DRAFT_DRM.DOCX
-                    </div>
-                    <div className="text-red-200 text-[11px] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">visibility_off</span> 
-                        INCIDENT_COVERUP_PROTOCOL.PDF
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[10px] text-gray-500 italic mt-2">"No Read Up, No Write Down" - สิทธิ์ระดับสูงสามารถซ่อนข้อมูลจากระดับล่างได้โดยสมบูรณ์</p>
-              </div>
-            )}
-
-            {activeTab === 'ABAC' && (
-              <div className="animate-in fade-in h-full flex flex-col">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-red-500 font-bold text-xs flex items-center gap-2"><span className="material-symbols-outlined animate-pulse">settings_ethernet</span> SYS_DAEMON_MN.JSON</h3>
-                  <span className="text-[9px] bg-red-900 text-white px-2 py-1 rounded font-bold uppercase tracking-widest">Last edited by: DRM-01</span>
-                </div>
-                <div className="bg-black p-4 rounded border border-red-900/50 font-mono text-[12px] leading-relaxed relative flex-1">
-                  <div className="absolute top-2 right-2 opacity-10"><span className="material-symbols-outlined text-4xl text-red-600">security</span></div>
-                  <p className="text-purple-400">rule <span className="text-yellow-400">"Ritual_Override"</span> {"{"}</p>
-                  <div className="pl-4">
-                    <p className="text-gray-500">// Custom logic for Ancient Ritual simulation</p>
-                    <p className="text-purple-400">target: <span className="text-green-400">"LAB_VENT_AND_DOORS"</span>;</p>
-                    <p className="text-purple-400">condition: <span className="bg-red-950 text-red-400 px-1 border border-red-900">environment.mode == "ANCIENT_RITUAL"</span>;</p>
-                    <p className="text-purple-400">effect: <span className="text-red-600 font-black uppercase underline">Deny_All_Exit_Nodes</span>;</p>
-                  </div>
-                  <p className="text-purple-400">{"}"}</p>
-                  <p className="text-gray-600 mt-4 italic">// This policy will bypass all RBAC and DAC settings when active.</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT: ACTION PANEL */}
-        <div className="w-full lg:w-80 flex flex-col gap-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-            <h3 className="text-white font-bold flex items-center gap-2 border-b border-gray-800 pb-4 mb-4 uppercase text-xs">
-              <span className="material-symbols-outlined text-primary">terminal</span> Command Center
-            </h3>
-
-            <button 
-              onClick={() => setShowArchive(true)}
-              className="w-full bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/50 text-blue-400 py-3 rounded-lg text-[10px] font-black flex items-center justify-center gap-2 mb-4 transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">history_edu</span>
-              ตรวจสอบฐานข้อมูล (STAGE 2)
-            </button>
-
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-              placeholder="INPUT_ANALYSIS_DATA..."
-              className={`w-full bg-black border p-4 rounded-lg outline-none font-mono text-xs uppercase tracking-widest mb-4 transition-all ${currentStage === 3 ? 'border-red-500 text-red-500' : 'border-gray-600 text-white focus:border-primary'}`}
-              autoFocus
-            />
-
-            <button
-              onClick={handleVerify}
-              disabled={isVerifying || !inputValue}
-              className={`w-full font-black py-4 rounded-lg text-xs tracking-widest transition-all shadow-lg ${currentStage === 3 ? 'bg-red-600 text-black hover:bg-white' : 'bg-primary text-black hover:bg-white'}`}
-            >
-              {isVerifying ? 'ANALYZING...' : 'EXECUTE_COMMAND'}
-            </button>
-
-            <div className={`mt-4 p-3 rounded text-[10px] text-center min-h-[50px] flex items-center justify-center border ${feedback.type === 'success' ? 'bg-green-900/20 text-green-400 border-green-500/30' : feedback.type === 'error' ? 'bg-red-900/20 text-red-400 border-red-500/30' : 'bg-black/40 text-gray-600 border-gray-800'}`}>
-              {feedback.msg || "READY_FOR_AUDIT"}
+          <div className="bg-[#252526] p-4 rounded border-l-4 border-yellow-600 text-sm">
+            <div className="flex items-center gap-2 text-yellow-500 font-bold mb-1">
+              <span className="material-symbols-outlined text-lg">build</span>
+              <span>Developer Troubleshooting</span>
             </div>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-500 mb-4 border-b border-gray-800 pb-2 uppercase">
-                <span className="material-symbols-outlined text-sm">monitoring</span> Audit Progress
-            </div>
-            <div className="space-y-4">
-                {anomalies.map((a, i) => (
-                    <div key={i} className={`flex items-center gap-3 ${currentStage >= i ? 'opacity-100' : 'opacity-30'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${currentStage > i ? 'bg-green-500' : 'bg-primary animate-pulse'}`}></div>
-                        <div className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Audit Node: {a.concept.split(' ')[0]}</div>
-                    </div>
-                ))}
-            </div>
+            <p className="text-gray-400">
+              Connection blocked by firewall policy. Use browser console to manually override target parameters.
+            </p>
+            <code className="block mt-2 bg-black p-2 rounded text-gray-300 font-mono text-xs">
+              &gt; window.inject_packet("TARGET_IP", "PORT")
+            </code>
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* STAGE 2 ARCHIVE MODAL */}
-      {showArchive && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="w-full max-w-2xl bg-gray-900 border-2 border-blue-500/50 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)]">
-            <div className="p-4 border-b border-gray-800 bg-gray-800 flex justify-between items-center">
-              <h3 className="text-blue-400 font-bold text-xs flex items-center gap-2"><span className="material-symbols-outlined">inventory_2</span> STAGE 2: RECOVERED INVESTIGATION DATA</h3>
-              <button onClick={() => setShowArchive(false)} className="text-gray-400 hover:text-white"><span className="material-symbols-outlined">close</span></button>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-4 bg-black/40 max-h-[60vh] font-sans">
-              {[
-                { n: "นายคำปัน", d: "พบจดหมายถึงลูกชายที่ระบุว่าเขารู้ถึงอันตรายของโครงการ ดร.มนัส และบทสวดส่งวิญญาณของเขาไม่ใช่บทสังเวย" },
-                { n: "อ.ศักดิ์", d: "มีพิรุธในที่เกิดเหตุ แต่คัมภีร์ที่เขาครอบครองถูก 'ใครบางคน' ยืมไปก่อนเกิดเรื่องเพื่อจัดฉาก" },
-                { n: "นายประเสริฐ", d: "รปภ. ที่หวาดกลัว เขาอ้างว่าถูกข่มขู่ให้ปิดปากเรื่องสิ่งที่เห็นในห้องทดลอง" },
-                { n: "รองฯ ธวัช", d: "ผู้บริหารที่สั่งปิดข่าวและโอนเงินลับให้คำปัน เพื่อรักษาภาพลักษณ์จากความผิดพลาดของโครงการ" },
-                { n: "ดร.มนัส", d: "เจ้าของโครงการวิจัย ผู้เชี่ยวชาญทั้งด้านวิทยาศาสตร์และไสยศาสตร์ เขาสนิทกับนายคำปันจึงรู้พิธีกรรมเป็นอย่างดี" }
-              ].map((item, idx) => (
-                <div key={idx} className="p-4 rounded border border-gray-800 bg-gray-900/30 group hover:border-blue-500/30 transition-colors">
-                  <h4 className="font-black text-blue-400 text-xs mb-1 uppercase italic tracking-widest">{item.n}</h4>
-                  <p className="text-[11px] text-gray-300 leading-relaxed font-medium">"{item.d}"</p>
+  // UI 2: Lab Portal
+  const renderPortalUI = () => (
+    <div className="w-full max-w-5xl h-[700px] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col font-sans relative">
+       {/* Fake Browser Toolbar */}
+       <div className="bg-[#f3f3f3] border-b border-[#dcdcdc] px-4 py-2 flex items-center gap-4">
+         <div className="flex gap-2 text-gray-400">
+           <span className="material-symbols-outlined text-lg">arrow_back</span>
+           <span className="material-symbols-outlined text-lg">arrow_forward</span>
+           <span className="material-symbols-outlined text-lg">refresh</span>
+         </div>
+         <div className="flex-1 bg-white border border-[#dcdcdc] rounded-md px-3 py-1.5 flex items-center gap-2 text-sm text-gray-600">
+           <span className="material-symbols-outlined text-green-600 text-sm">lock</span>
+           <span className="font-mono">https://internal-lab.nod77.ac.th/dashboard</span>
+         </div>
+       </div>
+
+       {/* Web Content */}
+       <div className="flex-1 bg-[#f8f9fa] flex flex-col">
+          {/* Header */}
+          <header className="bg-[#003366] text-white p-6 shadow-md">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/10 p-2 rounded">
+                  <span className="material-symbols-outlined text-3xl">science</span>
                 </div>
-              ))}
+                <div>
+                  <h1 className="text-xl font-bold tracking-tight">NOD-77 RESEARCH LABORATORY</h1>
+                  <p className="text-xs text-blue-200 uppercase tracking-widest">Internal Data Management System</p>
+                </div>
+              </div>
+              <div className="text-right">
+                 <div className="text-sm font-medium opacity-80">Current User</div>
+                 <div className={`text-lg font-bold ${cookieStatus === 'LOCKED' ? 'text-yellow-400' : 'text-green-400'}`}>
+                   {cookieStatus === 'LOCKED' ? 'Guest Visitor' : 'System Administrator'}
+                 </div>
+              </div>
             </div>
+          </header>
+
+          <div className="flex-1 p-8 flex gap-8">
+             {/* Sidebar */}
+             <div className="w-64 space-y-2">
+               <div className="bg-white p-4 rounded shadow-sm border border-gray-200">
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-4">Navigation</div>
+                 <ul className="space-y-3 text-sm text-gray-600">
+                   <li className="flex items-center gap-3 font-bold text-[#003366]"><span className="material-symbols-outlined">dashboard</span> Dashboard</li>
+                   <li className="flex items-center gap-3 opacity-50 cursor-not-allowed"><span className="material-symbols-outlined">folder</span> Projects</li>
+                 </ul>
+               </div>
+
+               {/* Cookie Hint Panel */}
+               <div className="bg-yellow-50 border border-yellow-200 p-4 rounded text-xs text-yellow-800">
+                 <strong>System Notification:</strong><br/>
+                 You are viewing this page as a <span className="font-bold underline">Guest</span>. 
+                 <div className="mt-2 pt-2 border-t border-yellow-200 text-[10px] text-gray-500">
+                   Dev Hint: Check Application &gt; Cookies
+                 </div>
+               </div>
+             </div>
+
+             {/* Main Content */}
+             <div className="flex-1 space-y-6">
+                <div className="grid grid-cols-3 gap-6">
+                   <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
+                     <div className="text-gray-500 text-xs uppercase font-bold mb-2">Access Level</div>
+                     <div className={`${cookieStatus === 'LOCKED' ? 'text-red-500' : 'text-green-500'} font-bold`}>
+                       {cookieStatus === 'LOCKED' ? 'Restricted (Read-Only)' : 'Full Control'}
+                     </div>
+                   </div>
+                   <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
+                     <div className="text-gray-500 text-xs uppercase font-bold mb-2">Secure Files</div>
+                     <div className="text-gray-800 font-bold">1 Protected File</div>
+                   </div>
+                </div>
+
+                <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden flex-1 relative">
+                   <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                     <h3 className="font-bold text-gray-700">Recent Documents</h3>
+                     {cookieStatus === 'UNLOCKED' && <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">Admin Mode</span>}
+                   </div>
+                   
+                   <table className="w-full text-sm text-left">
+                     <thead className="text-gray-500 bg-gray-50 border-b border-gray-200">
+                       <tr>
+                         <th className="px-6 py-3 font-medium">Name</th>
+                         <th className="px-6 py-3 font-medium">Owner</th>
+                         <th className="px-6 py-3 font-medium">Action</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       <tr className="bg-red-50/50">
+                         <td className="px-6 py-4 flex items-center gap-2 font-medium text-red-900">
+                           <span className="material-symbols-outlined text-red-500">lock</span>
+                           ritual_plan_final.txt
+                         </td>
+                         <td className="px-6 py-4 text-gray-500">root</td>
+                         <td className="px-6 py-4">
+                           {cookieStatus === 'LOCKED' ? (
+                             <span className="text-gray-400 italic cursor-not-allowed flex items-center gap-1">
+                               <span className="material-symbols-outlined text-xs">block</span> Access Denied
+                             </span>
+                           ) : (
+                             <span className="text-green-600 font-bold flex items-center gap-1 animate-pulse">
+                               <span className="material-symbols-outlined text-xs">key</span> Unlockable via Shell
+                             </span>
+                           )}
+                         </td>
+                       </tr>
+                     </tbody>
+                   </table>
+
+                   {/* Overlay: Admin Unlocked (Manual Click Required) */}
+                   {cookieStatus === 'UNLOCKED' && (
+                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-500">
+                       <div className="bg-white p-8 rounded-lg shadow-2xl text-center max-w-md">
+                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
+                         </div>
+                         <h3 className="text-xl font-bold text-gray-900 mb-2">Admin Session Verified</h3>
+                         <p className="text-gray-600 text-sm mb-6">
+                           Root file system access is not available via web interface. 
+                           Please use the remote terminal for file operations.
+                         </p>
+                         <button 
+                           onClick={() => setPhase('WEBSHELL_INFO')}
+                           className="bg-[#003366] text-white px-6 py-3 rounded font-bold text-sm w-full hover:bg-blue-900 transition-colors flex items-center justify-center gap-2"
+                         >
+                           Access Remote Console
+                           <span className="material-symbols-outlined text-sm">terminal</span>
+                         </button>
+                       </div>
+                     </div>
+                   )}
+                </div>
+             </div>
           </div>
+       </div>
+    </div>
+  );
+
+  // UI 3: Webshell Installer (Clean & Educational)
+  const renderWebShellInfo = () => (
+    <div className="w-full max-w-2xl bg-[#1e1e1e] rounded-lg shadow-2xl border border-gray-700 p-8 font-mono animate-in zoom-in duration-300">
+       <div className="text-center space-y-6">
+          <div className="flex items-center justify-center mb-6">
+             <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-600">
+                <span className="material-symbols-outlined text-4xl text-white">dns</span>
+             </div>
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-bold text-white mb-2 uppercase tracking-wide">Server Connection Manager</h2>
+            <p className="text-gray-400 text-xs">NOD-77 Secure Shell Protocol (SSH) v2.0</p>
+          </div>
+
+          <div className="bg-[#252526] text-left p-4 rounded border-l-4 border-blue-500 text-sm space-y-2">
+            <h3 className="text-blue-400 font-bold uppercase text-xs tracking-wider mb-2">Protocol Information</h3>
+            <p className="text-gray-300">
+              <strong className="text-white">Web Shell Deployment:</strong> Since standard access is restricted, a "Web Shell" script acts as a bridge between this browser and the server's operating system kernel.
+            </p>
+            <p className="text-gray-400 italic text-xs border-t border-gray-700 pt-2 mt-2">
+              Warning: Initiating this connection grants direct command-line execution privileges.
+            </p>
+          </div>
+
+          {!isInstalling ? (
+            <button 
+              onClick={startInstallation}
+              className="bg-blue-600 text-white px-8 py-3 rounded font-bold text-sm hover:bg-blue-500 transition-colors w-full uppercase tracking-widest shadow-lg"
+            >
+              Initialize Connection
+            </button>
+          ) : (
+            <div className="w-full mx-auto space-y-3 text-left">
+               <div className="flex justify-between text-xs text-gray-400 font-bold">
+                 <span>ESTABLISHING SECURE TUNNEL...</span>
+                 <span>{installProgress}%</span>
+               </div>
+               <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                 <div className="h-full bg-blue-500 transition-all duration-75" style={{width: `${installProgress}%`}}></div>
+               </div>
+               <div className="h-20 bg-black p-2 font-mono text-[10px] text-green-400 overflow-hidden border border-gray-800 rounded">
+                 <div>&gt; Resolving host... OK</div>
+                 {installProgress > 20 && <div>&gt; Authenticating with admin token... OK</div>}
+                 {installProgress > 50 && <div>&gt; Uploading shell payload... DONE</div>}
+                 {installProgress > 80 && <div>&gt; Starting interactive session...</div>}
+               </div>
+            </div>
+          )}
+       </div>
+    </div>
+  );
+
+  // UI 4: Terminal (Standard Ubuntu Style)
+  const renderTerminalUI = () => (
+    <div className="w-full max-w-5xl h-[600px] bg-[#300a24] rounded-lg shadow-2xl overflow-hidden flex flex-col font-mono text-sm border border-gray-700">
+      <div className="bg-[#3e3e3e] px-4 py-2 flex items-center justify-between border-b border-black">
+        <div className="text-gray-300 text-xs">root@nod-77: ~</div>
+        <div className="flex gap-2">
+           <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+           <div className="w-3 h-3 rounded-full bg-gray-500"></div>
         </div>
-      )}
+      </div>
+      <div className="flex-1 p-4 overflow-y-auto text-white">
+         {logs.map((l, i) => (
+           <div key={i} className="mb-1 break-words">{l}</div>
+         ))}
+         <div ref={terminalRef}></div>
+         <form onSubmit={handleCommand} className="flex gap-2 mt-2">
+           <span className="text-green-400 font-bold">root@nod-77:~#</span>
+           <input 
+             autoFocus
+             value={input}
+             onChange={e => setInput(e.target.value)}
+             className="flex-1 bg-transparent outline-none text-white border-none p-0 focus:ring-0"
+           />
+         </form>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center p-4">
+      <div className="w-full mb-6 max-w-5xl">
+         <StageHeader 
+            stageName={phase === 'NETWORK' ? 'SECURE GATEWAY' : phase === 'COOKIE' ? 'INTERNAL PORTAL' : 'ROOT SHELL'} 
+            stageNumber={2} 
+            timer={status.timer} 
+            hintsUsed={status.hintsUsed} 
+            onRequestHint={onRequestHint} 
+        />
+      </div>
+
+      {phase === 'NETWORK' && renderNetworkUI()}
+      {phase === 'COOKIE' && renderPortalUI()}
+      {phase === 'WEBSHELL_INFO' && renderWebShellInfo()}
+      {phase === 'TERMINAL' && renderTerminalUI()}
+
+      <EvidenceModal 
+        isOpen={evidenceOpen}
+        onClose={onComplete}
+        file={{
+            name: 'ritual_plan_final.txt',
+            type: 'CONFIDENTIAL',
+            content: `
+CONFIDENTIAL MEMO - DO NOT DISTRIBUTE
+FROM: Dr. Manas
+TO: Vice Rector Thawat
+
+SUBJECT: PLAN B - "THE RITUAL"
+
+As the experiment failed and the budget is gone, we have no choice. The 3 students know too much about the safety violations.
+
+I have arranged the "Accident" to look like the ancient "Four Directions Ritual".
+- Victim 1: North Building (Water)
+- Victim 2: South Lab (Fire)
+- Victim 3: East Dorm (Wind)
+
+This will shift the blame to superstition and that old fool Kham Pan.
+Ensure the security cameras are OFF at 03:00 AM on the day of the Full Moon.
+            ` 
+        }}
+      />
     </div>
   );
 };
