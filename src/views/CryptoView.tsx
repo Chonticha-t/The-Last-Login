@@ -318,22 +318,44 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
                   </div>
 
                   {/* แสดงรูปปฏิทินใต้บรรทัด "เวลาที่เสียชีวิต" */}
-                  {finding.includes("เวลาที่เสียชีวิต") && corpse.calendarImg && (
-                    <div className="ml-8 mt-4 max-w-md bg-zinc-950 border border-red-900/40 p-2 relative shadow-lg group">
-                      <div className="absolute -top-2 left-4 bg-black px-2 text-red-500 text-[9px] border border-red-900 uppercase font-black tracking-widest z-10">
-                        Time_Evidence_Photo
-                      </div>
-                      <div className="overflow-hidden rounded border border-zinc-800 bg-black">
-                        <img
-                          src={corpse.calendarImg}
-                          alt="Calendar evidence"
-                          className="w-full h-auto opacity-80 group-hover:opacity-100 transition-opacity duration-500 cursor-zoom-in"
-                          onClick={() => window.open(corpse.calendarImg, '_blank')}
-                        />
-                      </div>
-                      <p className="text-[10px] text-zinc-600 mt-1 italic uppercase tracking-tighter">
-                        * คลิกเพื่อตรวจสอบปฏิทินหลักฐาน
-                      </p>
+                  {finding.includes("เวลาที่เสียชีวิต") && (corpse.calendarImg || corpse.victimImg) && (
+                    <div className="ml-8 mt-4 flex gap-4 flex-wrap">
+                      {corpse.calendarImg && (
+                        <div className="max-w-md bg-zinc-950 border border-red-900/40 p-2 relative shadow-lg group">
+                          <div className="absolute -top-2 left-4 bg-black px-2 text-red-500 text-[9px] border border-red-900 uppercase font-black tracking-widest z-10">
+                            Time_Evidence_Photo
+                          </div>
+                          <div className="overflow-hidden rounded border border-zinc-800 bg-black">
+                            <img
+                              src={corpse.calendarImg}
+                              alt="Calendar evidence"
+                              className="w-full h-auto opacity-80 group-hover:opacity-100 transition-opacity duration-500 cursor-zoom-in"
+                              onClick={() => window.open(corpse.calendarImg, '_blank')}
+                            />
+                          </div>
+                          <p className="text-[10px] text-zinc-600 mt-1 italic uppercase tracking-tighter">
+                            * คลิกเพื่อตรวจสอบปฏิทินหลักฐาน
+                          </p>
+                        </div>
+                      )}
+                      {corpse.victimImg && (
+                        <div className="max-w-md bg-zinc-950 border border-red-900/40 p-2 relative shadow-lg group">
+                          <div className="absolute -top-2 left-4 bg-black px-2 text-red-500 text-[9px] border border-red-900 uppercase font-black tracking-widest z-10">
+                            Victim_Photo
+                          </div>
+                          <div className="overflow-hidden rounded border border-zinc-800 bg-black">
+                            <img
+                              src={corpse.victimImg}
+                              alt="Victim photo"
+                              className="w-full h-auto opacity-80 group-hover:opacity-100 transition-opacity duration-500 cursor-zoom-in"
+                              onClick={() => window.open(corpse.victimImg, '_blank')}
+                            />
+                          </div>
+                          <p className="text-[10px] text-zinc-600 mt-1 italic uppercase tracking-tighter">
+                            * รูปของผู้เสียชีวิต
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </li>

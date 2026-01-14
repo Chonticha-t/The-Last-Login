@@ -1,30 +1,378 @@
 import { useEffect, useState } from 'react';
 import { 
   Lock, Smartphone, Monitor, Usb, 
-  FileText, Image as ImageIcon, 
-  Fingerprint, ShieldAlert,
-  ChevronUp, ChevronRight, ChevronDown, ChevronLeft,
+  FileText, 
+  ShieldAlert,
   X
 } from 'lucide-react';
+import StageHeader from '../components/StageHeader';
+import type { CaseStatus } from '../types';
 
 // --- Types ---
 type DeviceType = 'NONE' | 'PHONE1' | 'PC' | 'PHONE2' | 'USB';
 type FingerprintFile = { id: string; name: string; src: string; isMatch: boolean };
 
-// --- Mock Data & Assets ---
-// ในการใช้งานจริง ให้เปลี่ยน path ของรูปภาพให้ตรงกับ assets ของคุณ
-const ASSETS = {
-  fingerprints: [
-    { id: 'fp1', name: 'นิ้วมือ1.webp', src: '/api/placeholder/100/100', isMatch: false }, // รูปสมมติ
-    { id: 'fp2', name: 'นิ้วมือ2.webp', src: '/api/placeholder/100/100', isMatch: false },
-    { id: 'fp3', name: 'นิ้วมือ3.webp', src: '/api/placeholder/100/100', isMatch: true }, // สมมติให้นิ้วนี้ถูก
-    { id: 'fp4', name: 'นิ้วมือ4.webp', src: '/api/placeholder/100/100', isMatch: false },
-  ],
-  chemical: '/api/placeholder/600/400', // รูปสูตรเคมี
-  elements: '/api/placeholder/600/200', // รูปธาตุ 4 ทิศ (Gemini Image)
-  video: 'คลิปยาม.mp4'
+// --- Ritual Cipher OTP Puzzle (Phone 2 Gate) ---
+const RitualCipherOTP = ({ onUnlock }: { onUnlock: () => void }) => {
+  const [rawOTP, setRawOTP] = useState([0, 0, 0, 0]); // รหัสดิบที่โชว์
+  const [inputOTP, setInputOTP] = useState(["", "", "", ""]); // ช่องกรอก
+  const [trueOTP, setTrueOTP] = useState(""); // คำตอบที่ถูกต้อง (คำนวณแล้ว)
+  const [status, setStatus] = useState("IDLE"); // IDLE, SUCCESS, FAIL
+
+  // สร้างโจทย์ใหม่
+  useEffect(() => {
+    generateNewOTP();
+  }, []);
+
+  const generateNewOTP = () => {
+    // สุ่มเลข 4 ตัว (เพื่อไม่ให้ยากไป พยายามเลี่ยงเลข 0 หรือเลขที่คำนวณยากๆ ได้)
+    const d1 = Math.floor(Math.random() * 6) + 1; // 1-6 (เพื่อบวก 3 ไม่เกิน 9)
+    const d2 = Math.floor(Math.random() * 8) + 2; // 2-9 (เพื่อลบ 2 ไม่ติดลบ)
+    const d3 = Math.floor(Math.random() * 5);     // 0-4 (เพื่อคูณ 2 ไม่เกิน 9 ง่ายๆ)
+    const d4 = Math.floor(Math.random() * 9) + 1; // 1-9
+
+    setRawOTP([d1, d2, d3, d4]);
+    setInputOTP(["", "", "", ""]);
+    setStatus("IDLE");
+
+    // คำนวณเฉลยล่วงหน้า
+    const ans1 = d1 + 3;          // ดิน: ถม 3
+    const ans2 = d2 - 2;          // น้ำ: หาย 2
+    const ans3 = (d3 * 2) % 10;   // ลม: เงายาว 2 เท่า (เอาหลักหน่วย)
+    const ans4 = Math.floor(d4 / 2); // ไฟ: เหลือครึ่งเดียว
+
+    setTrueOTP(`${ans1}${ans2}${ans3}${ans4}`);
+  };
+
+  const handleInput = (val: string, index: number) => {
+    if (isNaN(Number(val))) return;
+    const newInputs = [...inputOTP];
+    newInputs[index] = val.slice(-1); // เอาแค่ตัวล่าสุด
+    setInputOTP(newInputs);
+
+    // Auto focus next input
+    if (val && index < 3) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) (nextInput as HTMLInputElement).focus();
+    }
+  };
+
+  const checkOTP = () => {
+    const entered = inputOTP.join("");
+    if (entered.length < 4) return;
+
+    if (entered === trueOTP) {
+      setStatus("SUCCESS");
+      setTimeout(onUnlock, 1500);
+    } else {
+      setStatus("FAIL");
+      // สั่นเตือนและล้างค่า
+      if (navigator.vibrate) navigator.vibrate(500);
+      setTimeout(() => {
+        setStatus("IDLE");
+        setInputOTP(["", "", "", ""]);
+        const firstInput = document.getElementById(`otp-0`);
+        if (firstInput) (firstInput as HTMLInputElement).focus();
+      }, 1000);
+    }
+  };
+
+  // ตรวจสอบเมื่อกรอกครบ
+  useEffect(() => {
+    if (inputOTP.every(n => n !== "")) {
+      checkOTP();
+    }
+  }, [inputOTP]);
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-200 font-mono flex flex-col items-center justify-center p-6">
+      
+      {/* 1. ส่วนแสดงรหัสดิบ (The Clue) */}
+      <div className="w-full max-w-sm bg-black border border-gray-700 rounded-xl p-6 mb-8 text-center shadow-2xl relative overflow-hidden">
+        <h2 className="text-gray-500 text-xs tracking-[0.3em] mb-4">INCOMING SOUL SIGNAL</h2>
+        
+        {/* RAW CODE DISPLAY */}
+        <div className="flex justify-center gap-4 mb-2">
+          {rawOTP.map((digit, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className="text-4xl font-bold text-white mb-2">{digit}</div>
+              
+              {/* Element Icon/Hint */}
+              <div className={`text-[10px] px-2 py-0.5 rounded border 
+                ${i===0 ? 'border-amber-700 text-amber-600' : 
+                  i===1 ? 'border-blue-700 text-blue-600' : 
+                  i===2 ? 'border-gray-600 text-gray-500' : 'border-red-700 text-red-600'}`}>
+                {i===0 ? "N (ดิน)" : i===1 ? "E (น้ำ)" : i===2 ? "S (ลม)" : "W (ไฟ)"}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Poem Hint Mini */}
+        <div className="mt-4 pt-4 border-t border-gray-800 text-[10px] text-gray-600 grid grid-cols-2 gap-2 text-left">
+          <p>N: "ทับถมเพิ่มพูน (+3)"</p>
+          <p>E: "พัดพาหายไป (-2)"</p>
+          <p>S: "เงาขยายตัว (x2)"</p>
+          <p>W: "ร่างแยกสลาย (÷2)"</p>
+        </div>
+      </div>
+
+      {/* 2. ส่วนกรอกรหัส (The Input) */}
+      <div className="w-full max-w-xs">
+        <p className="text-center text-xs mb-4 text-green-500">
+           {status === "FAIL" ? "CALCULATION ERROR: RITUAL FAILED" : 
+            status === "SUCCESS" ? "AUTHENTICATION VERIFIED" : 
+            "ENTER PROCESSED RITUAL CODE"}
+        </p>
+
+        <div className="flex justify-between gap-2">
+          {inputOTP.map((digit, i) => (
+            <input
+              key={i}
+              id={`otp-${i}`}
+              type="tel"
+              value={digit}
+              onChange={(e) => handleInput(e.target.value, i)}
+              maxLength={1}
+              className={`w-14 h-16 bg-gray-800 text-center text-3xl font-bold rounded-lg border-2 outline-none transition-all
+                ${status === "FAIL" ? "border-red-500 text-red-500 animate-pulse" : 
+                  status === "SUCCESS" ? "border-green-500 text-green-500" : 
+                  "border-gray-600 focus:border-green-500 text-white"}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8 text-center opacity-30 text-xs">
+         SECURE TRANSMISSION PROTOCOL V.4
+      </div>
+
+    </div>
+  );
 };
 
+// --- Parallax Lock (USB Gate) ---
+const ParallaxLock = ({ onUnlock }: { onUnlock: () => void }) => {
+  const [orientation, setOrientation] = useState({ alpha: 0, beta: 0 });
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [step, setStep] = useState(0);
+  const [signalStrength, setSignalStrength] = useState(0); // 0-100%
+  const [isHolding, setIsHolding] = useState(false); // ต้องกดค้างเพื่อจูน
+
+  // โจทย์: North(Invert), East(Invert), South(Normal)
+  const PHASES = [
+    { 
+      label: "TARGET: NORTH SPIRIT", 
+      clueSymbol: "▼", // Inverted
+      targetDir: [160, 200], 
+      targetTilt: "DOWN"
+    },
+    { 
+      label: "TARGET: EAST SPIRIT", 
+      clueSymbol: "▼", // Inverted
+      targetDir: [250, 290], 
+      targetTilt: "DOWN"
+    },
+    { 
+      label: "TARGET: SOUTH SPIRIT", 
+      clueSymbol: "▲", // Upright
+      targetDir: [160, 200], 
+      targetTilt: "UP"
+    }
+  ];
+
+  const requestAccess = () => {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            setPermissionGranted(true);
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else { alert("Permission denied"); }
+        }).catch(console.error);
+    } else {
+      setPermissionGranted(true);
+      window.addEventListener('deviceorientation', handleOrientation);
+    }
+  };
+
+  const handleOrientation = (e: DeviceOrientationEvent) => {
+    let alpha = (e as any).webkitCompassHeading || e.alpha || 0;
+    let beta = e.beta || 0;
+    setOrientation({ alpha: alpha, beta: beta });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!permissionGranted || step >= 3) return;
+    
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    const deltaX = e.clientX - centerX;
+    const deltaY = e.clientY - centerY;
+    
+    setOrientation({
+      alpha: (deltaX / window.innerWidth) * 360,
+      beta: (deltaY / window.innerHeight) * 180 - 90
+    });
+  };
+
+  useEffect(() => {
+    if (step >= 3) return;
+
+    const target = PHASES[step];
+    const { alpha, beta } = orientation;
+
+    const targetCenter = (target.targetDir[0] + target.targetDir[1]) / 2;
+    let diff = Math.abs(alpha - targetCenter);
+    if (diff > 180) diff = 360 - diff;
+    
+    let dirScore = Math.max(0, 100 - (diff * 2.5)); 
+
+    let tiltScore = 0;
+    if (target.targetTilt === "DOWN") {
+       if (beta < 40 && beta > -90) tiltScore = 100;
+       else tiltScore = 0;
+    } else {
+       if (beta > 50) tiltScore = 100;
+       else tiltScore = 0;
+    }
+
+    const totalSignal = (dirScore + tiltScore) / 2;
+    setSignalStrength(prev => prev + (totalSignal - prev) * 0.1);
+
+  }, [orientation, step]);
+
+  useEffect(() => {
+    if (step >= 3) return;
+    
+    let timer: ReturnType<typeof setTimeout>;
+    if (isHolding && signalStrength > 90) {
+      timer = setTimeout(() => {
+        if (navigator.vibrate) navigator.vibrate(500);
+        setStep(prev => prev + 1);
+        setIsHolding(false);
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [isHolding, signalStrength, step]);
+
+  useEffect(() => {
+    if (step === 3) {
+      setTimeout(() => {
+        onUnlock();
+      }, 500);
+    }
+  }, [step, onUnlock]);
+
+  return (
+    <div className="min-h-screen bg-black text-red-600 font-mono flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
+      
+      <div className="absolute inset-0 opacity-10 pointer-events-none" 
+           style={{backgroundImage: 'url("https://www.transparenttextures.com/patterns/stardust.png")'}}>
+      </div>
+
+      {!permissionGranted ? (
+        <div className="z-10 text-center max-w-sm">
+          <h1 className="text-3xl mb-2 text-red-500 font-bold tracking-widest">PARALLAX</h1>
+          <p className="mb-6 text-gray-500 text-xs">
+            WARNING: Spirit manifestations may distort magnetic fields.<br/>
+            Observe the Geometry. Calculate the Inverse.
+          </p>
+          <button onClick={requestAccess} className="px-8 py-3 bg-red-900/20 border border-red-600 text-red-500 rounded hover:bg-red-900/40">
+            INITIATE SENSORS
+          </button>
+          
+          {/* Skip Button for PC without sensors */}
+          <div className="mt-4 pt-4 border-t border-red-900/30">
+            <p className="text-gray-600 text-[10px] mb-2">No device sensors detected?</p>
+            <button 
+              onClick={() => {
+                setStep(3);
+                setTimeout(onUnlock, 500);
+              }}
+              className="px-6 py-2 bg-gray-900/60 border border-gray-600 text-gray-400 rounded hover:bg-gray-900/80 text-xs uppercase tracking-wider transition-all"
+            >
+              Skip Puzzle (Demo Mode)
+            </button>
+          </div>
+        </div>
+      ) : (
+        step < 3 ? (
+          <div className="z-10 w-full max-w-sm flex flex-col items-center">
+            
+            <div className="w-full border-b border-red-900 pb-2 mb-8 flex justify-between items-end">
+                <div>
+                    <div className="text-xs text-gray-500">CURRENT SIGNAL</div>
+                    <div className="text-xl font-bold text-red-500">{PHASES[step].label}</div>
+                </div>
+                <div className="text-right">
+                    <div className="text-xs text-gray-500">GEOMETRY</div>
+                    <div className="text-4xl text-white font-bold leading-none">{PHASES[step].clueSymbol}</div>
+                </div>
+            </div>
+
+            <div className="relative w-64 h-64 rounded-full border-2 border-red-900 bg-black flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+                <div className="absolute w-[80%] h-[80%] border border-red-900/50 rounded-full"></div>
+                <div className="absolute w-[60%] h-[60%] border border-red-900/30 rounded-full"></div>
+                
+                <div className="absolute w-full h-[1px] bg-red-900/50 top-1/2"></div>
+                <div className="absolute h-full w-[1px] bg-red-900/50 left-1/2"></div>
+
+                <div 
+                   className={`rounded-full bg-red-600 blur-xl transition-all duration-300 opacity-80`}
+                   style={{ 
+                       width: `${signalStrength}%`, 
+                       height: `${signalStrength}%`,
+                       boxShadow: `0 0 ${signalStrength}px red`
+                   }}
+                ></div>
+                
+                <div className="absolute z-10 text-xs font-bold text-black mix-blend-screen">
+                    {Math.round(signalStrength)}%
+                </div>
+            </div>
+
+            <div className="w-full text-center">
+                <p className="text-xs text-gray-500 mb-2 h-4">
+                   {signalStrength > 80 ? "SIGNAL LOCKED! HOLD TO SYNC..." : "SEARCHING FOR RESONANCE..."}
+                </p>
+                <button
+                    onMouseDown={() => setIsHolding(true)}
+                    onMouseUp={() => setIsHolding(false)}
+                    onTouchStart={() => setIsHolding(true)}
+                    onTouchEnd={() => setIsHolding(false)}
+                    disabled={signalStrength < 50}
+                    className={`w-24 h-24 rounded-full border-4 transition-all duration-200 flex items-center justify-center
+                        ${isHolding 
+                            ? 'scale-90 bg-red-600 border-red-400 text-black shadow-[0_0_50px_red]' 
+                            : signalStrength > 50 
+                                ? 'bg-red-900/20 border-red-600 text-red-500 animate-pulse cursor-pointer'
+                                : 'bg-gray-900 border-gray-700 text-gray-700 cursor-not-allowed'
+                        }
+                    `}
+                >
+                    <span className="text-3xl">👆</span>
+                </button>
+                <p className="text-[10px] text-gray-600 mt-4">
+                    HINT: INVERTED SYMBOL (▼) CAUSES POLARITY REVERSAL (+180°)
+                </p>
+            </div>
+
+          </div>
+        ) : (
+          <div className="z-10 text-center animate-bounce">
+             <h1 className="text-4xl text-red-500 font-bold">UNLOCKED</h1>
+             <p className="text-sm text-red-800">THE SPIRITS ARE APPEASED</p>
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
+// --- Mock Data ---
+// ในการใช้งานจริง ให้เปลี่ยน path ของรูปภาพให้ตรงกับ assets ของคุณ
 const STAGE_DATA = {
   phone1: {
     dates: "5, 12, 20",
@@ -47,158 +395,137 @@ const STAGE_DATA = {
 เผาร่างให้ เกรียมกรม สมเหตุผล กระตุ้นเนื้อ ที่มอดไหม้ ให้ร้อนรน ปลุกชีพคน ให้ฟื้น ตื่นนิทราฯ`
 };
 
-// --- Logic Puzzle (Ritual Keypad) ---
-const LogicOtpPuzzle = ({ onUnlock }: { onUnlock: () => void }) => {
-  const [phase, setPhase] = useState(0); // 0=Earth,1=Water,2=Wind,3=Fire
-  const [feedback, setFeedback] = useState('');
-  const [wrongShake, setWrongShake] = useState(false);
-  const [litNum, setLitNum] = useState(0);
+// --- Forensic Data Table ---
+const FORENSIC_TABLE = [
+  { cat: 'CAUSE', find: 'Asphyxia (General)', code: '8A' },
+  { cat: 'CAUSE', find: 'Suffocation (Soil)', code: '8E' }, // Correct North
+  { cat: 'CAUSE', find: 'Drowning (Water)', code: '8W' },
+  { cat: 'TRACE', find: 'Puncture (Insect)', code: '2B' },
+  { cat: 'TRACE', find: 'Puncture (Needle)', code: '2N' }, // Correct East
+  { cat: 'TRACE', find: 'Laceration (Cut)', code: '2C' },
+  { cat: 'OBJECT', find: 'Rope (Hemp)', code: '5H' },
+  { cat: 'OBJECT', find: 'Rope (Wire)', code: '5W' },
+  { cat: 'OBJECT', find: 'Rope (Nylon)', code: '5Y' }, // Correct South
+];
 
-  const earthChallenge = { show: 2, answer: 8 };
-  const waterChallenge = { show: 6, answer: 9 };
-  const windChallenge = { shadow: 3, answer: 3 };
-  const fireChallenge = { answer: 5 };
+// --- Tri-Elemental Lock (Forensic Code Puzzle) ---
+const HardMasterLock = ({ onUnlock }: { onUnlock: () => void }) => {
+  const [input, setInput] = useState('');
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
 
-  useEffect(() => {
-    if (phase === 3) {
-      const interval = setInterval(() => {
-        setLitNum(prev => (prev % 9) + 1);
-      }, 120);
-      return () => clearInterval(interval);
-    }
-  }, [phase]);
+  // Answer: E8 + O2 + 5Y = E8O25Y
+  const CORRECT_HASH = "E8O25Y";
 
-  const handlePress = (num: number) => {
-    let isCorrect = false;
-    if (phase === 0) isCorrect = num === earthChallenge.answer;
-    if (phase === 1) isCorrect = num === waterChallenge.answer;
-    if (phase === 2) isCorrect = num === windChallenge.answer;
-    if (phase === 3) isCorrect = num === fireChallenge.answer;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanInput = input.toUpperCase().replace(/[\s-]/g, '');
 
-    if (isCorrect) {
-      setFeedback('CORRECT');
-      setTimeout(() => {
-        setFeedback('');
-        if (phase < 3) {
-          setPhase(p => p + 1);
-        } else {
-          onUnlock();
-        }
-      }, 500);
+    console.log('Input:', cleanInput, 'Expected:', CORRECT_HASH, 'Match:', cleanInput === CORRECT_HASH);
+
+    if (cleanInput === CORRECT_HASH) {
+      onUnlock();
     } else {
-      setFeedback('WRONG');
-      setWrongShake(true);
+      // Trap alerts for common mistakes
+      if (cleanInput === "8E2N5Y") {
+        alert("SECURITY ALERT: Time & Element protocols ignored.");
+      } else if (cleanInput === "E8N2Y5") {
+        alert("SECURITY ALERT: Elemental Shift required. \n(Did you shift the Water letter? Did you reverse the Wind?)");
+      } else if (cleanInput.includes("N2")) {
+        alert("HINT: Water element flows forward... (Letter +1)");
+      }
+      
+      setError(true);
+      setShake(true);
+      setInput('');
       setTimeout(() => {
-        setFeedback('');
-        setWrongShake(false);
-      }, 450);
+        setError(false);
+        setShake(false);
+      }, 500);
     }
   };
 
-  const renderEarth = () => (
-    <div className="flex flex-col items-center">
-      <div className="grid grid-cols-3 gap-1 mb-3 p-2 border border-amber-800 rounded opacity-60 pointer-events-none">
-        {[1,2,3,4,5,6,7,8,9].map(n => (
-          <div key={n} className={`w-8 h-8 flex items-center justify-center border border-amber-900 rounded text-xs ${n === earthChallenge.show ? 'bg-amber-600 text-white font-bold' : 'text-gray-600'}`}>
-            {n === earthChallenge.show ? n : '•'}
-          </div>
-        ))}
+  return (
+    <div className="w-full max-w-4xl bg-gray-900/90 border-2 border-green-900 p-8 rounded-xl shadow-[0_0_50px_rgba(34,197,94,0.1)]">
+      
+      {/* Header */}
+      <div className="flex justify-between items-end border-b-2 border-green-800 pb-4 mb-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-[0.2em] text-green-400">TRI-ELEMENTAL LOCK</h2>
+          <p className="text-xs text-green-700 mt-1">BIOMETRIC VERIFICATION: SUCCESS</p>
+        </div>
+        <div className="text-4xl text-green-500 animate-pulse">🔒</div>
       </div>
-      <p className="text-amber-500 font-bold text-lg">TARGET: {earthChallenge.show}</p>
-      <p className="text-[11px] text-amber-600 mt-1">สิ่งที่ฝังอยู่ใต้ดิน</p>
-    </div>
-  );
 
-  const renderWater = () => (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <div className="text-6xl font-bold text-blue-200 opacity-50 blur-[1px]">{waterChallenge.show}</div>
-        <div className="absolute top-full left-0 w-full h-full text-6xl font-bold text-blue-500 opacity-80" style={{ transform: 'scaleY(-1) skewX(-10deg)', filter: 'blur(0.5px)' }}>
-          {waterChallenge.show}
+      {/* Instructions Panel */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Left: Logic Rules */}
+        <div className="bg-black/50 p-4 rounded border border-green-900 text-sm">
+          <h3 className="text-green-400 font-bold mb-2 border-b border-green-900 pb-1">DECRYPTION PROTOCOLS</h3>
+          <ul className="space-y-2 text-gray-400">
+            <li>1. <span className="text-white">FIND CODE</span> from Table using Autopsy Data.</li>
+            <li>2. <span className="text-yellow-400">TIME CHECK:</span> If 00:00-05:59 → <b>SWAP Digits</b> (e.g., 8E → E8).</li>
+            <li>3. <span className="text-cyan-400">ELEMENTAL SHIFT:</span> Apply after Time Check.</li>
+          </ul>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="bg-orange-900/30 p-1 rounded text-orange-400 border border-orange-900">
+              EARTH<br/><span className="text-white">Stable</span>
+            </div>
+            <div className="bg-blue-900/30 p-1 rounded text-blue-400 border border-blue-900">
+              WATER<br/><span className="text-white">Letter +1</span>
+            </div>
+            <div className="bg-gray-700/30 p-1 rounded text-gray-400 border border-gray-600">
+              WIND<br/><span className="text-white">Swap Again</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Input Area */}
+        <div className="flex flex-col justify-center items-center bg-green-900/10 p-4 rounded border border-green-500/30">
+          <p className="mb-4 text-green-300 text-sm">ENTER FINAL 6-DIGIT HASH</p>
+          <form onSubmit={handleSubmit} className="w-full">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="______"
+              maxLength={6}
+              className={`w-full bg-black border-b-4 text-center text-4xl py-2 text-green-400 outline-none tracking-[0.5em] uppercase placeholder-green-900/30 transition-all font-mono
+                ${shake ? 'border-red-500 text-red-500 animate-shake' : 'border-green-600 focus:border-green-400'}
+              `}
+            />
+          </form>
+          {error && <p className="text-red-500 text-xs mt-2 animate-pulse">ACCESS DENIED: INVALID SEQUENCE</p>}
         </div>
       </div>
-      <div className="w-24 h-1 bg-blue-500/50 mt-1 blur-sm" />
-      <p className="text-[11px] text-blue-400 mt-3">เงาน้ำกลับด้าน</p>
-    </div>
-  );
 
-  const renderWind = () => (
-    <div className="flex flex-col items-center h-28 justify-end relative w-full">
-      <div className="absolute top-0 origin-top animate-[swing_2s_infinite_ease-in-out]">
-        <div className="h-16 w-1 bg-gray-600 mx-auto" />
-        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-gray-500 blur-md select-none">?</div>
-      </div>
-      <div className="mb-2 text-4xl text-black font-bold tracking-[0.4em] opacity-80 scale-y-50 skew-x-6 blur-[1px]" style={{ textShadow: '0 0 6px rgba(0,0,0,0.8)' }}>
-        {windChallenge.shadow}
-      </div>
-      <p className="text-[11px] text-gray-500">เชื่อเงา ไม่เชื่อวัตถุ</p>
-    </div>
-  );
-
-  const renderFire = () => (
-    <div className="flex flex-col items-center">
-      <div className="grid grid-cols-3 gap-2 mb-1 pointer-events-none">
-        {[1,2,3,4,5,6,7,8,9].map(n => {
-          const isAnswer = n === fireChallenge.answer;
-          const isLit = !isAnswer && n === litNum;
-          return (
-            <div key={n} className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-75 ${isAnswer ? 'bg-gray-900 border border-gray-800' : isLit ? 'bg-red-500 shadow-[0_0_10px_red] border-red-400' : 'bg-gray-800 border-gray-700'}`} />
-          );
-        })}
-      </div>
-      <p className="text-[11px] text-red-500">ในแสงสว่าง จงหาสิ่งที่ดับสูญ</p>
-    </div>
-  );
-
-  return (
-    <div className="bg-gray-900/80 border border-gray-700 rounded-xl p-4 shadow-xl relative">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex gap-2 text-[10px] font-mono">
-          {['EARTH','WATER','WIND','FIRE'].map((t,i) => (
-            <span key={t} className={`px-2 py-1 rounded border ${i === phase ? 'border-white bg-white text-black font-bold' : i < phase ? 'border-green-500 text-green-400' : 'border-gray-700 text-gray-500'}`}>{t}</span>
+      {/* Reference Table */}
+      <div className="border-t border-green-900 pt-4">
+        <p className="text-xs text-gray-500 mb-2 text-center">- FORENSIC CODE DATABASE -</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+          {FORENSIC_TABLE.map((item, idx) => (
+            <div key={idx} className="flex justify-between items-center px-3 py-2 bg-gray-900 hover:bg-gray-800 border-l-2 border-transparent hover:border-green-500 transition-colors">
+              <span className="text-gray-400">{item.find}</span>
+              <span className="font-mono font-bold text-green-600 bg-green-900/10 px-2 rounded">{item.code}</span>
+            </div>
           ))}
         </div>
-        <span className="text-[10px] text-gray-500">Ritual Keypad</span>
       </div>
-
-      <div className="w-full h-48 bg-gray-950 border border-gray-800 rounded-lg mb-4 flex items-center justify-center overflow-hidden p-4 relative">
-        {phase === 0 && renderEarth()}
-        {phase === 1 && renderWater()}
-        {phase === 2 && renderWind()}
-        {phase === 3 && renderFire()}
-        {feedback && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-            <span className={`text-xl font-bold ${feedback === 'CORRECT' ? 'text-green-500' : 'text-red-500'}`}>{feedback}</span>
-          </div>
-        )}
-      </div>
-
-      <div className={`grid grid-cols-3 gap-3 ${wrongShake ? 'animate-shake' : ''}`}>
-        {[1,2,3,4,5,6,7,8,9].map(num => (
-          <button
-            key={num}
-            onClick={() => handlePress(num)}
-            className="w-full h-12 bg-gray-800 rounded-full text-lg font-bold border border-gray-600 shadow-[0_4px_0_#374151] active:shadow-none active:translate-y-1 active:bg-gray-700 transition-all text-white"
-          >
-            {num}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-3 text-[11px] text-gray-500 text-center leading-relaxed">
-        จงอย่าเชื่อสิ่งที่ตาเห็น — ใช้กลอนนำทางหา PIN เพื่อปลดล็อก
-      </p>
 
       <style>{`
-        .animate-shake { animation: shake 0.35s ease-in-out; }
-        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px);} 75% { transform: translateX(4px);} }
-        @keyframes swing { 0%,100% { transform: rotate(16deg);} 50% { transform: rotate(-16deg);} }
+        .animate-shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
       `}</style>
     </div>
   );
 };
 
-const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
+const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete: () => void; status: CaseStatus; onRequestHint: () => void }) => {
   const [activeDevice, setActiveDevice] = useState<DeviceType>('NONE');
   const [unlockedDevices, setUnlockedDevices] = useState<string[]>([]);
   
@@ -207,28 +534,24 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
   const [phone1Error, setPhone1Error] = useState(false);
   const [phone1ShowHint, setPhone1ShowHint] = useState(false);
 
+  // --- Phone 2 State ---
+  const [phone2PuzzleCleared, setPhone2PuzzleCleared] = useState(false);
+
   // --- PC State ---
   const [pcStage, setPcStage] = useState<'LOCKED' | 'SCANNING' | 'DESKTOP'>('LOCKED');
   const [selectedFingerprint, setSelectedFingerprint] = useState<FingerprintFile | null>(null);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [scanStatus, setScanStatus] = useState<'IDLE' | 'SCANNING' | 'SUCCESS' | 'FAILED'>('IDLE');
 
   // --- USB State ---
-  const [usbStep, setUsbStep] = useState<'INSERT' | 'LOCATION' | 'UNLOCKED'>('INSERT');
-  const [directionSequence, setDirectionSequence] = useState<string[]>([]);
+  const [usbStep, setUsbStep] = useState<'INSERT' | 'PARALLAX' | 'UNLOCKED'>('INSERT');
+  const [usbParallaxCleared, setUsbParallaxCleared] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [pcTerminalOpen, setPcTerminalOpen] = useState(false);
   const [pcWindow, setPcWindow] = useState<'NONE' | 'PROJECT'>('NONE');
   const [pcPuzzleCleared, setPcPuzzleCleared] = useState(false);
-  const [pcPuzzleReset, setPcPuzzleReset] = useState(0);
   const [pcTerminalLines, setPcTerminalLines] = useState<string[]>([
     'tu-macbook-pro:~$ type "help" เพื่อดูคำสั่งที่ใช้ได้'
   ]);
-  const [pcCommand, setPcCommand] = useState('');
-  
-  // Sequence based on prompt: North(Earth) -> East(Wind) -> South(Wind)
-  // แม้ในกลอน East=Water แต่โจทย์ระบุลำดับการตายเป็น เหนือ->ตะวันออก->ใต้
-  const CORRECT_SEQUENCE = ['UP', 'RIGHT', 'DOWN']; 
+  const [pcCommand, setPcCommand] = useState(''); 
 
   // --- Handlers ---
 
@@ -252,47 +575,17 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
 
   const handleFingerprintScan = () => {
     if (!selectedFingerprint || !pcPuzzleCleared) return;
-    setScanStatus('SCANNING');
-    setScanProgress(0);
-
-    // Simulation of scanning process
     const interval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          if (selectedFingerprint.isMatch) {
-            setScanStatus('SUCCESS');
-            setTimeout(() => {
-                setUnlockedDevices(prev => [...prev, 'PC']);
-                setPcStage('DESKTOP');
-            }, 1500);
-          } else {
-            setScanStatus('FAILED');
-            setTimeout(() => setScanStatus('IDLE'), 2000);
-          }
-          return 100;
+      if (Math.random() > 0.7) {
+        clearInterval(interval);
+        if (selectedFingerprint.isMatch) {
+          setTimeout(() => {
+              setUnlockedDevices(prev => [...prev, 'PC']);
+              setPcStage('DESKTOP');
+          }, 500);
         }
-        return prev + 2;
-      });
-    }, 20);
-  };
-
-  const handleDirectionInput = (dir: string) => {
-    const newSeq = [...directionSequence, dir];
-    setDirectionSequence(newSeq);
-    
-    // Check match dynamically or wait for 3 inputs
-    if (newSeq.length === CORRECT_SEQUENCE.length) {
-        if (JSON.stringify(newSeq) === JSON.stringify(CORRECT_SEQUENCE)) {
-            setTimeout(() => {
-                setUnlockedDevices(prev => [...prev, 'USB']);
-                setUsbStep('UNLOCKED');
-            }, 500);
-        } else {
-            // Reset on wrong sequence
-            setTimeout(() => setDirectionSequence([]), 500);
-        }
-    }
+      }
+    }, 100);
   };
 
   const appendTerminal = (lines: string | string[]) => {
@@ -317,7 +610,7 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
         prompt,
         'IPv4 Address . . . . . . . . . . . : 192.168.1.10',
         'Subnet Mask  . . . . . . . . . . . : 255.255.255.0',
-        'Default Gateway . . . . . . . . . . : 192.168.1.1'
+        'Default Gateway . . . . . . . . . . : 192.168.1.1:8000'
       ]);
     } else if (lower === 'netstat -ano | find "8080"') {
       appendTerminal([
@@ -356,10 +649,7 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
           else {
             setPcStage('LOCKED');
             setPcPuzzleCleared(false);
-            setPcPuzzleReset(prev => prev + 1);
             setSelectedFingerprint(null);
-            setScanStatus('IDLE');
-            setScanProgress(0);
           }
         }}
         className="group relative bg-gray-900 border-2 border-gray-700 hover:border-purple-500 rounded-xl p-6 flex flex-col items-center gap-4 transition-all hover:scale-105"
@@ -376,7 +666,7 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
       >
         <Smartphone className={`w-16 h-16 ${unlockedDevices.includes('PHONE2') ? 'text-yellow-400' : 'text-yellow-700'}`} />
         <span className="text-white font-bold tracking-widest">DEVICE: FRIEND_2</span>
-        <span className="text-[10px] text-gray-500">(NO PASSCODE)</span>
+        <span className="text-[10px] text-gray-500">{phone2PuzzleCleared ? 'UNLOCKED' : 'LOGIC PUZZLE'}</span>
       </button>
 
       {/* USB */}
@@ -531,75 +821,13 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
               <X className="w-4 h-4" />
               <span className="text-xs font-mono">ESC</span>
             </button>
-            <h2 className="text-2xl font-mono text-purple-400 mb-2 tracking-widest uppercase">Biometric Auth Required</h2>
-            <p className="text-gray-500 mb-8 text-sm">System Locked. Identify user fingerprint to proceed.</p>
-          <div className="w-full flex flex-col xl:flex-row gap-8 items-start">
-            <div className="w-full xl:w-[420px]">
-            <LogicOtpPuzzle key={pcPuzzleReset} onUnlock={() => setPcPuzzleCleared(true)} />
-            <div className="mt-3 text-xs text-center text-gray-400">
-              {pcPuzzleCleared ? 'คีย์แพดสำเร็จแล้ว — สแกนลายนิ้วมือได้' : 'ปลดล็อกคีย์แพดพิธีกรรมก่อนจะเปิดสแกนเนอร์'}
+            <div className="w-full flex flex-col items-center justify-center">
+              <HardMasterLock onUnlock={() => {
+                setPcPuzzleCleared(true);
+                setUnlockedDevices(prev => [...prev, 'PC']);
+                setPcStage('DESKTOP');
+              }} />
             </div>
-            </div>
-
-            <div className="relative flex flex-col md:flex-row gap-12 items-center flex-1">
-              {!pcPuzzleCleared && (
-              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm border border-purple-900/40 rounded-lg flex items-center justify-center text-purple-200 text-sm font-semibold z-10">
-                Solve Ritual Keypad first
-              </div>
-              )}
-              {/* Fingerprint Scanner UI */}
-              <div className="relative w-64 h-64 border-2 border-dashed border-purple-500/30 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden">
-                {/* Scanning Beam */}
-                {scanStatus === 'SCANNING' && (
-                   <div className="absolute w-full h-1 bg-purple-500 top-0 animate-[scan_2s_ease-in-out_infinite] shadow-[0_0_10px_#a855f7]" />
-                )}
-                      
-                {/* Placeholder for "Latent Print" */}
-                <Fingerprint className="w-32 h-32 text-gray-700 absolute opacity-30" />
-                      
-                {/* Selected Print Overlay */}
-                {selectedFingerprint && (
-                  <div className={`transition-all duration-500 ${scanStatus === 'SCANNING' ? 'opacity-100' : 'opacity-80'}`}>
-                     <Fingerprint className={`w-32 h-32 ${scanStatus === 'SUCCESS' ? 'text-green-500' : scanStatus === 'FAILED' ? 'text-red-500' : 'text-purple-400'}`} />
-                     <span className="absolute bottom-2 left-0 right-0 text-xs text-white bg-black/60 px-2 py-1">{selectedFingerprint.name}</span>
-                  </div>
-                )}
-                      
-                {/* Status Text */}
-                {scanStatus === 'SCANNING' && (
-                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                     <span className="text-purple-400 font-mono text-xl font-bold">{scanProgress}%</span>
-                   </div>
-                )}
-              </div>
-
-              {/* File Selection */}
-              <div className="w-64 space-y-3">
-                <p className="text-left text-xs text-gray-400 uppercase font-bold mb-2">Select Source File (Assets)</p>
-                {ASSETS.fingerprints.map((fp) => (
-                  <button
-                    key={fp.id}
-                    onClick={() => {
-                      setScanStatus('IDLE');
-                      setSelectedFingerprint(fp);
-                    }}
-                    className={`w-full flex items-center p-3 rounded border ${selectedFingerprint?.id === fp.id ? 'border-purple-500 bg-purple-500/20' : 'border-gray-700 hover:border-gray-500'} transition-all`}
-                  >
-                    <ImageIcon className="w-4 h-4 text-gray-400 mr-3" />
-                    <span className="text-sm text-gray-300">{fp.name}</span>
-                  </button>
-                ))}
-                <button 
-                  onClick={handleFingerprintScan}
-                  disabled={!selectedFingerprint || scanStatus === 'SCANNING' || !pcPuzzleCleared}
-                  className={`w-full py-3 mt-4 rounded font-bold uppercase tracking-wider text-sm ${(!selectedFingerprint || !pcPuzzleCleared) ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/50'}`}
-                >
-                  {!pcPuzzleCleared ? 'Solve keypad first' : scanStatus === 'SCANNING' ? 'Analyzing...' : 'Execute Scan'}
-                </button>
-                {scanStatus === 'FAILED' && <p className="text-red-500 text-xs mt-2 animate-pulse">MISMATCH: Ridge patterns do not align.</p>}
-              </div>
-            </div>
-          </div>
         </div>
         ) : (
         <div className="flex-1 bg-[url('/api/placeholder/1920/1080')] bg-cover relative min-h-[70vh] md:min-h-[78vh]">
@@ -721,9 +949,14 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
     <div className="h-full bg-black rounded-[3rem] border-8 border-gray-800 overflow-hidden relative shadow-2xl max-w-sm mx-auto flex flex-col">
        <div className="bg-gray-800 p-4 pt-8 text-white flex items-center justify-between shadow-md">
             <button onClick={() => setActiveDevice('NONE')} className="p-2 hover:bg-white/10 rounded-full transition-all"><X /></button>
-            <span className="font-bold">Chat</span>
+            <span className="font-bold">{phone2PuzzleCleared ? 'Chat' : 'Locked'}</span>
             <div className="w-6" />
       </div>
+      {!phone2PuzzleCleared ? (
+        <div className="flex-1 flex items-center justify-center p-4 bg-gray-900">
+          <RitualCipherOTP onUnlock={() => setPhone2PuzzleCleared(true)} />
+        </div>
+      ) : (
       <div className="flex-1 bg-[#2b2b2b] p-4 overflow-y-auto space-y-6">
            <div className="flex flex-col items-start">
                <span className="text-[10px] text-gray-400 mb-1 px-1">เพื่อนตุ๊ (ชาย 2)</span>
@@ -751,128 +984,75 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
                </div>
            </div>
       </div>
+      )}
     </div>
   );
 
   const renderUSB = () => (
-    <div className="w-full max-w-2xl mx-auto bg-gray-900 border-2 border-red-900 rounded-lg p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
-        <div className="flex justify-between items-start mb-8">
-            <div>
-                <h2 className="text-2xl font-bold text-red-500 uppercase tracking-widest flex items-center gap-2">
-                    <ShieldAlert /> Security Clearance
-                </h2>
-                <p className="text-gray-500 text-xs mt-1">TWO-FACTOR AUTHENTICATION REQUIRED</p>
-            </div>
-            <button onClick={() => setActiveDevice('NONE')} className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-white/10 rounded"><X /></button>
-        </div>
-
+    <div className="w-full h-full bg-black text-gray-200 font-mono flex flex-col items-center justify-center p-6">
         {usbStep === 'INSERT' && (
             <div className="text-center py-12">
                 <div className="animate-bounce mb-8">
                     <Usb className="w-24 h-24 text-gray-600 mx-auto" />
                 </div>
+                <h2 className="text-2xl font-bold text-red-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+                    <ShieldAlert /> Security Clearance
+                </h2>
+                <p className="text-gray-500 text-xs mb-6">PHYSICAL SECURITY TOKEN REQUIRED</p>
                 <button 
-                    onClick={() => setUsbStep('LOCATION')}
+                    onClick={() => setUsbStep('PARALLAX')}
                     className="bg-red-900 hover:bg-red-700 text-white font-bold py-4 px-8 rounded shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all"
                 >
-                    INSERT PHYSICAL SECURITY KEY (YUBIKEY)
+                    INSERT SECURITY KEY
                 </button>
-                <p className="mt-4 text-gray-500 text-sm">Hardware Token Detected...</p>
             </div>
         )}
 
-        {usbStep === 'LOCATION' && (
-            <div className="flex flex-col items-center animate-in fade-in">
-                <p className="text-red-400 font-mono mb-2">FACTOR 2: SOMEWHERE YOU ARE</p>
-                <p className="text-gray-400 text-xs mb-8 text-center max-w-md">
-                    "ระบุตำแหน่งตามลำดับเหตุการณ์การตาย... เริ่มจากศพแรก..."<br/>
-                    (North/Earth {'->'} East {'->'} South)
-                </p>
-
-                <div className="relative w-64 h-64 bg-gray-800 rounded-full border-4 border-gray-700 flex items-center justify-center shadow-inner">
-                    <div className="absolute top-2 text-gray-500 font-bold">N (Earth)</div>
-                    <div className="absolute right-4 text-gray-500 font-bold">E (Water/Wind)</div>
-                    <div className="absolute bottom-2 text-gray-500 font-bold">S (Wind)</div>
-                    <div className="absolute left-4 text-gray-500 font-bold">W (Fire)</div>
-
-                    {/* D-Pad Controls */}
-                    <div className="grid grid-cols-3 gap-2 p-4">
-                        <div />
-                        <button onClick={() => handleDirectionInput('UP')} className="w-12 h-12 bg-gray-700 hover:bg-red-500 rounded flex items-center justify-center transition-colors active:scale-90"><ChevronUp className="text-white" /></button>
-                        <div />
-                        
-                        <button onClick={() => handleDirectionInput('LEFT')} className="w-12 h-12 bg-gray-700 hover:bg-red-500 rounded flex items-center justify-center transition-colors active:scale-90"><ChevronLeft className="text-white" /></button>
-                        <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center border border-gray-600">
-                            <div className={`w-3 h-3 rounded-full ${directionSequence.length > 0 ? 'bg-red-500 animate-ping' : 'bg-gray-600'}`} />
-                        </div>
-                        <button onClick={() => handleDirectionInput('RIGHT')} className="w-12 h-12 bg-gray-700 hover:bg-red-500 rounded flex items-center justify-center transition-colors active:scale-90"><ChevronRight className="text-white" /></button>
-
-                        <div />
-                        <button onClick={() => handleDirectionInput('DOWN')} className="w-12 h-12 bg-gray-700 hover:bg-red-500 rounded flex items-center justify-center transition-colors active:scale-90"><ChevronDown className="text-white" /></button>
-                        <div />
-                    </div>
-                </div>
-
-                <div className="mt-8 flex gap-2">
-                    {directionSequence.map((dir, i) => (
-                        <div key={i} className="w-8 h-8 rounded border border-red-500/50 flex items-center justify-center text-red-500 bg-red-900/20">
-                            {dir === 'UP' && <ChevronUp size={16}/>}
-                            {dir === 'DOWN' && <ChevronDown size={16}/>}
-                            {dir === 'LEFT' && <ChevronLeft size={16}/>}
-                            {dir === 'RIGHT' && <ChevronRight size={16}/>}
-                        </div>
-                    ))}
-                    {[...Array(3 - directionSequence.length)].map((_, i) => (
-                        <div key={i} className="w-8 h-8 rounded border border-gray-700 bg-gray-800" />
-                    ))}
-                </div>
+        {usbStep === 'PARALLAX' && !usbParallaxCleared && (
+            <div className="w-full h-full flex items-center justify-center">
+                <ParallaxLock onUnlock={() => {
+                    setUsbParallaxCleared(true);
+                    setUsbStep('UNLOCKED');
+                }} />
             </div>
         )}
 
-        {usbStep === 'UNLOCKED' && (
-          <div className="text-center animate-in zoom-in">
-            <div className="w-full bg-black aspect-video rounded-lg border-2 border-green-500 relative overflow-hidden">
-              <video 
-                className="w-full h-full object-cover"
-                controls
-                autoPlay
-                muted
-                playsInline
-                onError={() => setVideoError(true)}
-                onCanPlay={() => setVideoError(false)}
-              >
-                <source src={encodeURI('/คลิปยาม.mp4')} type="video/mp4" />
-                <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+        {usbStep === 'UNLOCKED' && usbParallaxCleared && (
+          <div className="text-center animate-in zoom-in flex flex-col items-center gap-8">
+            <div className="w-full max-w-2xl bg-gray-900/80 rounded-lg border border-green-500 overflow-hidden">
+              <div className="w-full bg-black aspect-video flex items-center justify-center">
+                <video 
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  onError={() => setVideoError(true)}
+                  onCanPlay={() => setVideoError(false)}
+                >
+                  <source src={encodeURI('/คลิปยาม.mp4')} type="video/mp4" />
+                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </div>
-            <p className="text-gray-500 text-xs mt-2">
-              {videoError 
-                ? 'ไม่พบไฟล์คลิปยาม.mp4 ในโฟลเดอร์ public/ (ตรวจสอบชื่อไฟล์/ตัวพิมพ์/นามสกุล)' 
-                : ''}
-            </p>
-            <h3 className="text-green-500 font-bold text-xl mt-4">ACCESS GRANTED</h3>
-            <p className="text-gray-400 text-sm mt-2">Evidence Retrieved successfully.</p>
-            <button onClick={onComplete} className="mt-8 bg-green-600 hover:bg-green-500 text-black font-bold py-3 px-8 rounded-full uppercase">
-              Complete Stage 2
-            </button>
+            <div className="text-center">
+              <h3 className="text-green-500 font-bold text-xl mb-2">ACCESS GRANTED</h3>
+              <p className="text-gray-400 text-sm mb-2">Evidence Retrieved successfully.</p>
+              {videoError && <p className="text-gray-500 text-xs mb-4">ไม่พบไฟล์คลิปยาม.mp4 ในโฟลเดอร์ public/</p>}
+              <button onClick={onComplete} className="bg-green-600 hover:bg-green-500 text-black font-bold py-3 px-8 rounded-full uppercase">
+                Complete Stage 2
+              </button>
+            </div>
           </div>
         )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 font-sans selection:bg-red-900 selection:text-white overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-black text-gray-200 font-sans selection:bg-red-900 selection:text-white overflow-hidden flex flex-col">
         {/* Header */}
-        <header className="bg-black/50 backdrop-blur border-b border-red-900/30 p-4 flex justify-between items-center z-50">
-            <h1 className="text-2xl font-black italic text-white tracking-tighter">
-                <span className="text-red-600">STAGE 2:</span> EVIDENCE_COLLECTION
-            </h1>
-            <div className="flex gap-4 text-xs font-mono text-gray-400">
-                <span>UNLOCKED: {unlockedDevices.length}/4</span>
-                <span>STATUS: {unlockedDevices.length === 4 ? 'COMPLETED' : 'ACTIVE'}</span>
-            </div>
-        </header>
+        <StageHeader stageName="STAGE 2: EVIDENCE_COLLECTION" stageNumber={2} timer={status.timer} hintsUsed={status.hintsUsed} onRequestHint={onRequestHint} />
 
         {/* Main Area */}
         <main className="flex-1 relative overflow-hidden">
@@ -880,7 +1060,7 @@ const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
 
             {/* Device Rendering Logic */}
-            <div className="relative z-10 h-full min-h-[calc(100vh-140px)] p-4 md:p-8 flex items-stretch justify-center">
+            <div className="relative z-10 h-full min-h-[calc(100vh-120px)] p-4 md:p-8 flex items-stretch justify-center">
                 {activeDevice === 'NONE' && renderDashboard()}
                 {activeDevice === 'PHONE1' && renderPhone1()}
                 {activeDevice === 'PC' && renderPC()}

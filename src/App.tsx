@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GameStage, type CaseStatus } from './types';
 import SplashView from './views/SplashView';
 import BriefingView from './views/BriefingView';
+import Stage2BriefingView from './views/Stage2BriefingView';
 import MissionMapView from './views/MissionMapView';
 import CryptoView from './views/CryptoView';
 import AuthView from './views/AuthView';
@@ -123,8 +124,8 @@ const App: React.FC = () => {
       case GameStage.CRYPTO:
         return <CryptoView status={status} onComplete={() => handleCompleteStage('crypto', GameStage.MAP)} onRequestHint={handleRequestHint} />;
       case GameStage.AUTH:
-        return <AuthView status={status} onComplete={() => handleCompleteStage('auth', GameStage.MAP)} onRequestHint={handleRequestHint} />;
-      case GameStage.AUTHZ:
+        return <AuthView status={status} onComplete={() => handleCompleteStage('auth', GameStage.BRIEFING2)} onRequestHint={handleRequestHint} />;      case GameStage.BRIEFING2:
+        return <Stage2BriefingView onProceed={() => setStage(GameStage.AUTHZ)} />;      case GameStage.AUTHZ:
         return <AuthzView status={status} onComplete={() => setStage(GameStage.ACCUSE)} onRequestHint={handleRequestHint} />;
       case GameStage.ACCUSE:
         return <AccuseView onCorrect={() => setStage(GameStage.COMPLETE)} onWrong={() => setStage(GameStage.MAP)} />;
