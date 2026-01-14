@@ -47,9 +47,32 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [status.stage]);
 
+  // Handle Browser History
+  useEffect(() => {
+    // Initialize history state if empty
+    if (!window.history.state) {
+      window.history.replaceState({ stage: GameStage.SPLASH }, '');
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      // Only handle stage changes at the App level
+      if (state && state.stage && state.stage !== status.stage) {
+        setStatus(prev => ({ ...prev, stage: state.stage }));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const setStage = (stage: GameStage) => {
-    setStatus(prev => ({ ...prev, stage }));
-    window.scrollTo(0, 0);
+    // Only push if different from current stage to avoid dupes
+    if (status.stage !== stage) {
+      window.history.pushState({ stage }, '');
+      setStatus(prev => ({ ...prev, stage }));
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleCompleteStage = (

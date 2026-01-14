@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import type { CaseStatus, TerminalLine } from '../types';
 import StageHeader from '../components/StageHeader';
 import Terminal from '../components/Terminal';
-// Import รูปภาพจาก assets
-import death01 from '../assets/การตาย 01.png';
-import death02 from '../assets/การตาย 02.png';
-import death03 from '../assets/การตาย 03.png';
+import { CORPSES_DATA } from '../data/corpses';
 
 interface CryptoViewProps {
   status: CaseStatus;
@@ -16,106 +13,6 @@ interface CryptoViewProps {
 const MaterialIcon = ({ icon, className = "" }: { icon: string, className?: string }) => (
   <span className={`material-symbols-outlined ${className}`}>{icon}</span>
 );
-
-const CORPSES_DATA = [
-  {
-    id: 0,
-    direction: "NORTH (อุดร)",
-    pos: { top: '15%', left: '50%' },
-    element: "EARTH",
-    cryptoType: "SYMMETRIC ENCRYPTION",
-    iconName: "landslide",
-    difficulty: "Easy",
-    description: "ไฟล์ผลชันสูตรถูกเข้ารหัส XOR. จงหากุญแจที่เมื่อคำนวณแล้ว จะคืนค่าออกมาเป็น 'ชื่อทิศ' ที่พบศพรายนี้",
-    challengeData: {
-      ciphertext: "09 1D 1D 01 06",
-      hint: "ไฟล์ผลชันสูตรถูกเข้ารหัส XOR. จงหากุญแจที่เมื่อคำนวณแล้ว จะคืนค่าออกมาเป็น 'ชื่อทิศ' ที่พบศพรายนี้ \n Answer XXXXX(+D)",
-      solution: "GROUND"
-    },
-    autopsyFindings: [
-      "สภาพศพ: ถูกฝังดินลึกระดับไหล่ เหลือเพียงศีรษะโผล่พ้นดิน มีสัญลักษณ์รูปสามเหลี่ยมหัวคว่ำมีขีดกลางจารึกที่หน้าผาก",
-      "ภายนอก: พบรอยช้ำเป็นวงรอบข้อมือทั้งสองข้าง ลักษณะถูกมัดไพล่หลังอย่างแน่นหนา",
-      "ภายใน: ตรวจพบเศษดินโคลนจำนวนมากอัดแน่นในหลอดลมและปอด",
-      "สาเหตุการตาย: ขาดอากาศหายใจจากการสำลักดิน (suffocation)",
-      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
-    ],
-    poem: `ทิศอุดร ป้อนธรณี พลีธาตุดิน 
-          ฝังกายสิ้น ลงลึก ผนึกหมาย 
-          เหลือเพียงเศียร พ้นพื้น ยืนท้าทาย 
-          ดูดชีพวาย ใต้หล้า กลับมาเป็น`,
-    calendarImg: death01 // ผูกรูปที่ 1
-  },
-  {
-    id: 1,
-    direction: "EAST (บูรพา)",
-    pos: { top: '50%', left: '85%' },
-    element: "WATER",
-    cryptoType: "ASYMMETRIC (RSA)",
-    iconName: "water_drop",
-    difficulty: "Medium",
-    description: "ถอดรหัส RSA เพื่อเข้าถึงผลตรวจสารพิษ. (Given: n = 3233, e = 17. Find d)",
-    challengeData: {
-      ciphertext: "RSA Key Exchange Intercepted.",
-      hint: "คำนวน d จาก d ≡ e^(-1) (mod φ(n)) \nโดย φ(n) = (p-1)(q-1) \nกำหนดให้ p = 61, q = 53 และ n = 3233",
-      solution: "2753"
-    },
-    autopsyFindings: [
-      "สภาพศพ: ลอยคว่ำหน้าในแหล่งน้ำ สภาพขึ้นอืด มีสัญสักษณ์รูปสามเหลี่ยมหัวลงตรงกลางหน้าผาก",
-      "ภายนอก: ไม่พบรอยบาดแผลฉกรรจ์ แต่พบรอยเข็มฉีดยา บริเวณต้นคอด้านขวา",
-      "พิษวิทยา: ตรวจพบสาร Arsenic (สารหนู) ในกระแสเลือดปริมาณสูง",
-      "สรุป: ผู้ตายเป็นอัมพาตจากสารพิษและจมน้ำเสียชีวิตในเวลาต่อมา",
-      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
-    ],
-    poem: "บูรพา บูชาชล ดลธาตุน้ำ \nปล่อยศพลอย ทวนลำ ที่เชี่ยวเข็ญ \nให้กระแส แทรกซึม ดื่มความเย็น \nชะล้างเข็ญ เลือดหมุน อุ่นกายา",
-    calendarImg: death02 // ผูกรูปที่ 2
-  },
-  {
-    id: 2,
-    direction: "SOUTH (ทักษิณ)",
-    pos: { top: '85%', left: '50%' },
-    element: "WIND",
-    cryptoType: "HASH FUNCTION",
-    iconName: "air",
-    difficulty: "Medium",
-    description: "วิเคราะห์ความสัมพันธ์ของ 'รอบการตาย' จากปฏิทินที่ผ่านมา",
-    challengeData: {
-      // เปลี่ยนเป็นบอกให้ผู้เล่น 'คำนวณวันที่ในปฏิทินเท่านั้น'
-      ciphertext: "EVIDENCE_KEY: คำนวณวันที่ ใน ปฎิทิน",
-      ciphertextDisplay: "EVIDENCE_KEY: คำนวณวันที่ ใน ปฎิทิน",
-      hint: "พิจารณาปฏิทิน: 'ผลคูณของสองวันที่ ผสานรวมกับระยะห่างของรอบมรณา'",
-      solution: "67"
-    },
-    autopsyFindings: [
-      "สภาพศพ: แขวนคออยู่บนกิ่งไม้สูงด้วยเชือกไนลอน มีสัญลักษณ์รูปสามเหลี่ยมหัวขึ้นมีขีดตรงกลางจารึกตรงกลางหน้าผาก",
-      "ภายนอก: ลายนิ้วมือถูกทำลายด้วยสารเคมีกัดกร่อนรุนแรง",
-      "ข้อสังเกต: รอยเชือกที่คอมีลักษณะกดทับในแนวเฉียงขึ้น แต่พบรอยกดทับอื่นที่เกิดขึ้นหลังตาย",
-      "สรุป: สารเคมีที่พบคือ กรดเข้มข้น (Acid)",
-      "เวลาที่เสียชีวิต: ประมาณสามนาฬิกาหลังเที่ยงคืน"
-    ],
-    poem: "ทิศทักษิณ ถิ่นวาโย โชว์ธาตุลม \nแขวนศพสม ยอดไม้ ไหว้เวหา \nให้ลมพัด ยัดเยียด เบียดวิญญา \nคืนลมปราณ สู่ปุระ อุระตน",
-    calendarImg: death03 // ผูกรูปที่ 3
-  },
-  {
-    id: 3,
-    direction: "WEST (ปัจจิม)",
-    pos: { top: '50%', left: '15%' },
-    element: "FIRE",
-    cryptoType: "DIGITAL SIGNATURE",
-    iconName: "local_fire_department",
-    difficulty: "Hard",
-    description: "ตรวจสอบ Digital Signature ของรายงานฉบับนี้",
-    challengeData: {
-      ciphertext: "Signer: Unknown\nHash Mismatch Detected.",
-      hint: "เมื่อค่า Hash ไม่ตรงกัน การยืนยันตัวตน (Verification) ย่อมล้มเหลว... จงระบุศัพท์เทคนิคที่ใช้เรียก 'สถานะ' ของ Signature นี้",
-      solution: "INVALID"
-    },
-    autopsyFindings: [
-      "ข้อมูลการสืบสวน(การคาดการณ์): เป้าหมายรายต่อไปถูกกำหนดให้เป็นเหยื่อในพิธี 'บูชาอัคคี' (ธาตุไฟ)",
-    ],
-    poem: "ปัจจิม ริมอัคคี พลีธาตุไฟ \nเผาร่างให้ เกรียมกรม สมเหตุผล \nกระตุ้นเนื้อ ที่มอดไหม้ ให้ร้อนรน \nปลุกชีพคน ให้ฟื้น ตื่นนิทราฯ",
-    calendarImg: null // รายที่ 4 ไม่มีรูป
-  }
-];
 
 type ViewState = 'MAP' | 'CHALLENGE' | 'REPORT';
 
@@ -130,6 +27,36 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
     { timestamp: 'SYSTEM', type: 'ERR', content: 'CRITICAL: RESOLVE ALL 4 NODES TO PROCEED.' }
   ]);
 
+  // Handle Browser History (Back/Forward Buttons)
+  React.useEffect(() => {
+    const currentState = window.history.state || {};
+    if (!currentState.view) {
+      window.history.replaceState({ ...currentState, view: 'MAP', corpseId: 0, stage: status.stage }, '');
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      // If we have view state, handle it locally
+      if (state && state.view) {
+        if (state.corpseId !== undefined) {
+          setSelectedCorpseId(state.corpseId);
+        }
+        setView(state.view);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [status.stage]);
+
+  const navigateTo = (newView: ViewState, targetCorpseId?: number) => {
+    const nextId = targetCorpseId !== undefined ? targetCorpseId : selectedCorpseId;
+    // Include stage in the state object so App.tsx is happy
+    window.history.pushState({ stage: status.stage, view: newView, corpseId: nextId }, '');
+    if (targetCorpseId !== undefined) setSelectedCorpseId(targetCorpseId);
+    setView(newView);
+  };
+
   const handleCorpseClick = (id: number) => {
     const isUnlocked = unlockedStatus[id];
     const canAccess = id === 0 || unlockedStatus[id - 1];
@@ -139,11 +66,10 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
       return;
     }
 
-    setSelectedCorpseId(id);
     if (isUnlocked) {
-      setView('REPORT');
+      navigateTo('REPORT', id);
     } else {
-      setView('CHALLENGE');
+      navigateTo('CHALLENGE', id);
       setChallengeInput('');
       setTerminalLogs([
         { timestamp: 'SECURE', type: 'WARN', content: `TRYING TO ACCESS NODE: ${CORPSES_DATA[id].direction}` },
@@ -162,7 +88,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
         const newStatus = [...unlockedStatus];
         newStatus[selectedCorpseId] = true;
         setUnlockedStatus(newStatus);
-        setView('REPORT');
+        navigateTo('REPORT');
       }, 800);
     } else {
       setTerminalLogs(prev => [...prev, { timestamp: 'SYSTEM', type: 'ERR', content: 'INCORRECT KEY. ACCESS DENIED.' }]);
@@ -174,7 +100,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
     if (allCleared) {
       onComplete();
     } else {
-      setView('MAP');
+      navigateTo('MAP');
     }
   };
 
@@ -270,7 +196,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
               <p className="text-red-900 text-sm font-mono uppercase tracking-widest">ELEMENT: {corpse.element} | DIFFICULTY: {corpse.difficulty}</p>
             </div>
           </div>
-          <button onClick={() => setView('MAP')} className="text-gray-500 hover:text-white font-mono text-xs border border-gray-800 px-6 py-3 hover:border-gray-500 transition-all uppercase tracking-tighter">
+          <button onClick={() => navigateTo('MAP')} className="text-gray-500 hover:text-white font-mono text-xs border border-gray-800 px-6 py-3 hover:border-gray-500 transition-all uppercase tracking-tighter">
             [ TERMINATE_LINK ]
           </button>
         </div>
@@ -279,8 +205,9 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
           <div className="w-full md:w-1/2 flex flex-col gap-10">
             <div className="bg-zinc-900/30 border border-red-900/30 p-10 rounded-sm relative overflow-hidden glass-panel">
               <div className="absolute top-0 left-0 w-2 h-full bg-red-700"></div>
-              <h3 className="text-red-600 font-mono text-sm mb-6 flex items-center gap-2 uppercase tracking-widest">
-                <MaterialIcon icon="enhanced_encryption" /> ENCRYPTED_DATA
+              <h3 className="text-red-600 font-mono text-base mb-6 flex items-center gap-2 uppercase tracking-widest">
+                <MaterialIcon icon="enhanced_encryption" /> ENCRYPTED_DATA:
+                
               </h3>
               <div className="font-mono text-gray-400 text-3xl leading-relaxed break-all bg-black/60 p-8 border border-gray-800 shadow-inner italic">
                 {corpse.id === 2 ? corpse.challengeData.ciphertextDisplay : corpse.challengeData.ciphertext}
@@ -291,7 +218,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
                 <div className="mt-8 bg-black/80 border border-red-900/50 p-6 rounded-lg font-mono shadow-2xl">
                   <div className="flex items-center gap-2 mb-4 border-b border-red-900/30 pb-2">
                     <MaterialIcon icon="terminal" className="text-red-600 text-sm" />
-                    <span className="text-red-500 text-xs font-black uppercase tracking-[0.2em]">Live_XOR_Decoder_v1.0</span>
+                    <span className="text-red-500 text-xl font-black uppercase tracking-[0.2em]">XOR_Decoder_Table</span>
                   </div>
 
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-11 gap-2">
@@ -302,7 +229,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
 
                       return (
                         <div key={i} className={`flex flex-col items-center p-2 border transition-all duration-300 ${currentKeyChar ? 'border-red-600 bg-red-900/20' : 'border-zinc-800 bg-black'}`}>
-                          <span className="text-[8px] text-zinc-600 mb-1 font-bold">HEX</span>
+                          <span className="text-[10px] text-white-600 mb-1 font-bold">HEX</span>
                           <span className="text-xs text-white font-mono">{hex}</span>
                           <div className="my-1 text-[8px] text-red-900 font-bold">⊕</div>
                           <span className="text-[10px] text-primary font-mono font-bold">{getCharHex(currentKeyChar)}</span>
@@ -314,14 +241,14 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
                       );
                     })}
                   </div>
-                  <p className="mt-4 text-[10px] text-zinc-500 italic font-mono">* ระบบกำลังทำ Bitwise XOR ระหว่าง Ciphertext กับ Key ที่คุณป้อน...</p>
+                  <p className="mt-4 text-[15px] text-white-500 italic font-mono">* ระบบกำลังทำ Bitwise XOR ระหว่าง Ciphertext กับ Key ที่คุณป้อน...</p>
                 </div>
               )}
               {/* --- จบส่วนเครื่องคิดเลข --- */}
             </div>
 
             <div className="bg-zinc-900/10 border border-red-900/20 p-10 rounded-sm">
-              <h3 className="text-gray-500 font-mono text-xs mb-4 uppercase tracking-widest italic">INTEL_HINT:</h3>
+              <h3 className="text-gray-500 font-mono text-sm mb-4 uppercase tracking-widest italic">INTEL_HINT:</h3>
               <p className="text-gray-200 font-mono text-2xl italic">"{corpse.challengeData.hint}"</p>
             </div>
           </div>
@@ -332,7 +259,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
             </div>
 
             <div className="flex gap-0 shadow-2xl">
-              <div className="bg-red-900 text-black px-8 py-5 font-bold font-mono flex items-center text-2xl">{'>'}</div>
+              <div className="bg-red-800 text-black px-8 py-5 font-bold font-mono flex items-center text-2xl">{'-->'}</div>
               <input
                 type="text"
                 value={challengeInput}
@@ -416,7 +343,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
 
           <div className="w-full md:w-1/3 flex flex-col gap-6">
             <div className="bg-zinc-950 border border-gray-700 p-6 flex-1 flex flex-col relative shadow-[inset_0_0_50px_rgba(0,0,0,1)]">
-              <div className="absolute -top-3 left-4 bg-black px-2 text-red-800 text-[10px] border border-red-900 uppercase font-black tracking-widest">Ritual_Evidence</div>
+      
               <h3 className="text-gray-400 font-bold mb-4 flex items-center gap-2 uppercase text-xs tracking-widest">
                 <MaterialIcon icon="history_edu" /> Ritual Inscription
               </h3>
