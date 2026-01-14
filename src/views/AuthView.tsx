@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { CaseStatus } from '../types';
 import { 
   Lock, Smartphone, Monitor, Usb, 
   FileText, Image as ImageIcon, 
@@ -198,7 +199,13 @@ const LogicOtpPuzzle = ({ onUnlock }: { onUnlock: () => void }) => {
   );
 };
 
-const Stage2Investigation = ({ onComplete }: { onComplete: () => void }) => {
+interface AuthViewProps {
+  status: CaseStatus;
+  onComplete: () => void;
+  onRequestHint: () => void;
+}
+
+const Stage2Investigation = ({ onComplete }: AuthViewProps) => {
   const [activeDevice, setActiveDevice] = useState<DeviceType>('NONE');
   const [unlockedDevices, setUnlockedDevices] = useState<string[]>([]);
   
