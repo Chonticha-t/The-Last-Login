@@ -184,6 +184,23 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
   const getCharHex = (char: string) =>
     char ? char.toUpperCase().charCodeAt(0).toString(16).toUpperCase() : '00';
 
+  const highlightText = (text: string) => {
+    if (!text) return text;
+    // Split by the specific phrase to highlight
+    const parts = text.split(/(ผลตรวจสารพิษ)/g);
+    return (
+      <span>
+        {parts.map((part, i) => (
+          part === 'ผลตรวจสารพิษ' ? (
+            <span key={i} className="text-red-500 font-bold animate-pulse">{part}</span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        ))}
+      </span>
+    );
+  };
+
   const renderChallenge = () => {
     const corpse = CORPSES_DATA[selectedCorpseId];
     return (
@@ -210,7 +227,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
                 
               </h3>
               <div className="font-mono text-gray-400 text-3xl leading-relaxed break-all bg-black/60 p-8 border border-gray-800 shadow-inner italic">
-                {corpse.id === 2 ? corpse.challengeData.ciphertextDisplay : corpse.challengeData.ciphertext}
+                {corpse.id === 2 ? highlightText(corpse.challengeData.ciphertext || "") : highlightText(corpse.challengeData.ciphertext)}
               </div>
 
               {/* --- ส่วนที่เพิ่ม: Hacker's XOR Visualizer (เครื่องคิดเลข) --- */}
@@ -369,9 +386,33 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
               <h3 className="text-gray-400 font-bold mb-4 flex items-center gap-2 uppercase text-xs tracking-widest">
                 <MaterialIcon icon="history_edu" /> Ritual Inscription
               </h3>
-              <div className="flex-1 bg-zinc-100 text-black p-6 font-serif text-xl leading-relaxed shadow-2xl rotate-1 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-900/30 rounded-full blur-3xl pointer-events-none"></div>
-                <p className="whitespace-pre-wrap font-medium text-center italic">
+              
+              <div className={`flex-1 p-6 font-serif text-xl leading-relaxed shadow-2xl rotate-1 relative overflow-hidden transition-all duration-500
+                ${corpse.id === 3 
+                  ? 'bg-[#d6cfc2] text-zinc-800 scale-95 border border-[#a89f81] shadow-inner' 
+                  : 'bg-zinc-100 text-black'}`}>
+                
+                {corpse.id === 3 ? (
+                  /* Crumpled Paper Effect */
+                  <>
+                    <div className="absolute inset-0 opacity-30 pointer-events-none" 
+                         style={{ 
+                           backgroundImage: 'linear-gradient(135deg, rgba(0,0,0,0.05) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) 75%, transparent 75%, transparent)', 
+                           backgroundSize: '20px 20px' 
+                         }}></div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.2)_100%)] pointer-events-none"></div>
+                    {/* Crinkle lines */}
+                    <div className="absolute top-[20%] left-0 w-full h-[1px] bg-black/10 rotate-3"></div>
+                    <div className="absolute top-[60%] left-0 w-full h-[1px] bg-black/10 -rotate-2"></div>
+                    <div className="absolute top-0 left-[40%] w-[1px] h-full bg-black/5 rotate-12"></div>
+                    <div className="absolute -right-4 -bottom-4 size-20 bg-black/10 blur-xl rounded-full"></div>
+                  </>
+                ) : (
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-red-900/30 rounded-full blur-3xl pointer-events-none"></div>
+                )}
+
+                <p className={`whitespace-pre-wrap font-medium text-center italic relative z-10 flex flex-col justify-center h-full
+                   ${corpse.id === 3 ? 'font-mono text-2xl uppercase tracking-wider text-red-900/80 font-black rotate-1' : ''}`}>
                   {corpse.poem}
                 </p>
               </div>
