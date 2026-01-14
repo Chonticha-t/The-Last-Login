@@ -15,7 +15,7 @@ import { getInvestigatorHint } from './services/genimiService';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<CaseStatus>({
-    stage: GameStage.AUTHZ,
+    stage: GameStage.SPLASH,
     timer: 0,
     hintsUsed: 0,
     progress: 0,
