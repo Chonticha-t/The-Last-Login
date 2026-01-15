@@ -112,6 +112,9 @@ const Phone1Puzzle = ({ passcode, dates, time, onUnlock, onClose }: Phone1Puzzle
             <p className="text-amber-400 text-[11px] italic bg-amber-900/20 p-2 rounded border-l-2 border-amber-600">
               * ก่อน 6 โมงเช้า = ยังนับเป็นคืนวันก่อนหน้า
             </p>
+            <p className="text-blue-400 text-[11px] italic bg-amber-900/20 p-2 rounded border-l-2 border-blue-600">
+             hint: วันที่รวมต่อด้วยเวลา
+            </p>
             <button 
               onClick={() => setPhone1ShowHint(!phone1ShowHint)}
               className="text-[11px] text-blue-400 hover:text-blue-300 underline w-full text-left"
