@@ -49,10 +49,10 @@ const suspects: SuspectData[] = [
     id: 4,
     name: "ดร.มนัส",
     role: "นักวิชาการอิสระ",
-    age: "52",
+    age: "67",
     image: IMG_MANAS,
-    publicProfile: "สุขุม มีเหตุผล พูดเรื่องวิทยาศาสตร์เสมอ ศึกษาพิธีกรรมในเชิงวิชาการเพื่อการวิจัย",
-    suspicion: "เป็นคนแรกที่เสนอให้โยงคดีเข้ากับความเชื่อท้องถิ่น ดูเหมือนไม่มีพิษภัย แต่มีความรู้เรื่องพิธีกรรมลึกซึ้งจนน่ากลัว",
+    publicProfile: "สุขุม มีเหตุผล ศึกษาพิธีกรรมในเชิงวิชาการเพื่อการวิจัย",
+    suspicion: "เป็นคนแรกที่เสนอให้โยงคดีเข้ากับความเชื่อท้องถิ่น",
   },
   {
     id: 5,
@@ -67,9 +67,10 @@ const suspects: SuspectData[] = [
 
 interface Stage2BriefingViewProps {
   onProceed: () => void;
+  onBack?: () => void;
 }
 
-const Stage2BriefingView: React.FC<Stage2BriefingViewProps> = ({ onProceed }) => {
+const Stage2BriefingView: React.FC<Stage2BriefingViewProps> = ({ onProceed, onBack }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   
   const playSwitchSound = () => {
@@ -93,6 +94,22 @@ const Stage2BriefingView: React.FC<Stage2BriefingViewProps> = ({ onProceed }) =>
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1a1a] font-sans relative overflow-hidden selection:bg-red-900 selection:text-white">
       
+      {/* Back Button - Top Left */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 z-30 flex items-center gap-2 bg-slate-900/30 border border-slate-400 rounded-lg px-4 py-2 hover:bg-slate-900/50 hover:border-slate-300 transition-all shadow-[0_0_15px_rgba(148,163,184,0.2)] hover:shadow-[0_0_25px_rgba(148,163,184,0.4)]"
+        >
+          <span className="text-slate-300 text-xs font-bold tracking-widest uppercase">← ด่านที่ 2</span>
+        </button>
+      )}
+      
+      {/* Unlock Indicator - Top Right */}
+      <div className="absolute top-6 right-6 z-30 flex items-center gap-2 bg-green-900/30 border border-green-500 rounded-lg px-4 py-2 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span className="text-green-500 text-xs font-bold tracking-widest uppercase">UNLOCKED</span>
+      </div>
+
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-40 z-0"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-0 pointer-events-none"></div>
@@ -210,7 +227,7 @@ const Stage2BriefingView: React.FC<Stage2BriefingViewProps> = ({ onProceed }) =>
                         className="bg-neutral-800 hover:bg-black text-white px-6 py-3 rounded shadow-lg transition-all font-bold uppercase tracking-wider text-sm flex items-center gap-2 group hover:scale-105"
                     >
                         <span>🔍</span>
-                        เข้าสู่ด่านที่ 2: Evidence Collection
+                        เข้าสู่ด่านที่ 3
                     </button>
                 </div>
             </div>
