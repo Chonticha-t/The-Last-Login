@@ -1,523 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { 
-  Lock, Smartphone, Monitor, Usb, 
+  Smartphone, Monitor, Usb, 
   FileText, 
   ShieldAlert,
   X
 } from 'lucide-react';
 import StageHeader from '../components/StageHeader';
+import TriVariablePuzzle from '../components/TriVariablePuzzle';
+import RitualCipherOTP from '../components/RitualCipherOTP';
+import HardMasterLock from '../components/HardMasterLock';
+import Phone1Puzzle from '../components/Phone1Puzzle';
 import type { CaseStatus } from '../types';
 
 // --- Types ---
 type DeviceType = 'NONE' | 'PHONE1' | 'PC' | 'PHONE2' | 'USB';
 
-// --- PRISM MECHANICS COMPONENT ---
-// Icons for prism puzzle
-const PRISM_ICONS = {
-  SOURCE: "⦿",
-  RECEIVER: "◎",
-  BLOCK: "█",
-  TOXIN: "☣",
-  UP: "△",
-  DOWN: "▽",
-  SPLIT_UP: "◬",
-  SPLIT_DOWN: "⟆",
-};
-
-// Level Configuration
-const PRISM_CASES = {
-  NORTH: {
-    id: 'NORTH',
-    title: 'CASE 01: THE BURIED SIGNAL',
-    element: 'EARTH (ดิน)',
-    autopsy: [
-      "สภาพศพ: ฝังดินลึก, สัญลักษณ์ ∇ มีขีด",
-      "ภายใน: ดินอัดแน่นในปอด (Blockage)",
-      "เป้าหมาย: เจาะดินลงไปหาตัวรับที่ก้นหลุม"
-    ],
-    gridSize: { r: 6, c: 6 },
-    source: { r: 1, c: 0, dir: 'RIGHT' },
-    receiver: { r: 5, c: 4, type: 'NORMAL' },
-    obstacles: [
-      { r: 2, c: 2, type: 'BLOCK' }, { r: 2, c: 3, type: 'BLOCK' }, { r: 2, c: 4, type: 'BLOCK' },
-      { r: 3, c: 1, type: 'BLOCK' }, { r: 3, c: 2, type: 'BLOCK' }, { r: 3, c: 5, type: 'BLOCK' },
-      { r: 4, c: 2, type: 'BLOCK' }, { r: 4, c: 3, type: 'BLOCK' }
-    ],
-    inventory: { split_down: 1 }
-  },
-  EAST: {
-    id: 'EAST',
-    title: 'CASE 02: TOXIC REFRACTION',
-    element: 'WATER (น้ำ)',
-    autopsy: [
-      "สภาพศพ: ลอยคว่ำหน้า, สัญลักษณ์ ∇",
-      "พิษวิทยา: พบสารพิษในเลือด (Require Purple)",
-      "เป้าหมาย: ผ่านพิษแล้วหักเหแสงลงน้ำ"
-    ],
-    gridSize: { r: 6, c: 6 },
-    source: { r: 2, c: 0, dir: 'RIGHT' },
-    receiver: { r: 5, c: 5, type: 'REQUIRES_PURPLE' },
-    obstacles: [
-      { r: 2, c: 3, type: 'TOXIN' },
-      { r: 4, c: 1, type: 'BLOCK' }, { r: 4, c: 2, type: 'BLOCK' }
-    ],
-    inventory: { down: 1 }
-  },
-  SOUTH: {
-    id: 'SOUTH',
-    title: 'CASE 03: THE HANGING PATH',
-    element: 'WIND (ลม)',
-    autopsy: [
-      "สภาพศพ: แขวนคอสูง, สัญลักษณ์ △ มีขีด",
-      "ข้อสังเกต: รอยเชือกเฉียงขึ้น (Tension)",
-      "เป้าหมาย: ส่งสัญญาณขึ้นที่สูง"
-    ],
-    gridSize: { r: 8, c: 6 },
-    source: { r: 7, c: 0, dir: 'RIGHT' },
-    receiver: { r: 0, c: 4, type: 'NORMAL' },
-    obstacles: [
-      { r: 3, c: 2, type: 'BLOCK' }, { r: 4, c: 3, type: 'BLOCK' },
-      { r: 1, c: 3, type: 'BLOCK' }
-    ],
-    inventory: { split_up: 1 }
-  }
-};
-
-const PrismMechanics = ({ onUnlock }: { onUnlock: () => void }) => {
-  const [currentCase, setCurrentCase] = useState(PRISM_CASES.NORTH);
-  const [grid, setGrid] = useState<any[][]>([]);
-  const [inventory, setInventory] = useState<Record<string, number>>({});
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [beams, setBeams] = useState<any[]>([]);
-  const [status, setStatus] = useState("IDLE");
-  const [logMessage, setLogMessage] = useState("READY FOR INPUT");
-
-  useEffect(() => {
-    resetLevel();
-  }, [currentCase]);
-
-  const resetLevel = () => {
-    const { gridSize, obstacles, inventory: levelInv } = currentCase;
-    
-    let newGrid = Array(gridSize.r).fill(null).map(() => Array(gridSize.c).fill(null));
-    
-    obstacles.forEach((o: any) => {
-      newGrid[o.r][o.c] = { type: o.type };
-    });
-
-    setGrid(newGrid);
-    setInventory({ ...levelInv });
-    setBeams([]);
-    setStatus("IDLE");
-    setSelectedTool(null);
-    setLogMessage("SYSTEM RESET. AWAITING CONFIGURATION.");
-  };
-
-  const handleCellClick = (r: number, c: number) => {
-    if (status === "ACTIVE" || status === "SUCCESS") return;
-    
-    if (selectedTool && !grid[r][c]) {
-      if (inventory[selectedTool] > 0) {
-        const newGrid = grid.map(row => [...row]);
-        newGrid[r][c] = { type: 'PRISM', variant: selectedTool };
-        setGrid(newGrid);
-        setInventory(prev => ({ ...prev, [selectedTool]: prev[selectedTool] - 1 }));
-        setLogMessage(`PLACED ${selectedTool.toUpperCase()} PRISM AT [${r},${c}]`);
-        setSelectedTool(null);
-      }
-    } 
-    else if (grid[r][c]?.type === 'PRISM') {
-      const removedType = grid[r][c].variant;
-      const newGrid = grid.map(row => [...row]);
-      newGrid[r][c] = null;
-      setGrid(newGrid);
-      setInventory(prev => ({ ...prev, [removedType]: prev[removedType] + 1 }));
-      setLogMessage(`REMOVED COMPONENT FROM [${r},${c}]`);
-    }
-  };
-
-  const activateCircuit = () => {
-    setStatus("ACTIVE");
-    setLogMessage("POWERING UP LASER ARRAY...");
-    
-    const { source, receiver, gridSize } = currentCase;
-    let activeBeams: any[] = [];
-    let beamHistory: any[] = [];
-    let success = false;
-    let failReason = "";
-
-    activeBeams.push({ r: source.r, c: source.c, dr: 0, dc: 1, color: 'GREEN' });
-
-    for (let step = 0; step < 50; step++) {
-      if (activeBeams.length === 0) break;
-
-      let nextBeams: any[] = [];
-
-      for (let beam of activeBeams) {
-        beamHistory.push({ ...beam });
-
-        const nextR = beam.r + beam.dr;
-        const nextC = beam.c + beam.dc;
-
-        if (nextR < 0 || nextR >= gridSize.r || nextC < 0 || nextC >= gridSize.c) {
-           continue;
-        }
-
-        const cell = grid[nextR][nextC];
-        let newBeamsFromHere: any[] = [];
-        let hitBlock = false;
-
-        if (nextR === receiver.r && nextC === receiver.c) {
-          if (receiver.type === 'REQUIRES_PURPLE' && beam.color !== 'PURPLE') {
-            failReason = "ERROR: TOXIN SIGNATURE MISSING";
-          } else {
-            success = true;
-          }
-          continue; 
-        }
-
-        if (cell) {
-          if (cell.type === 'BLOCK') {
-            hitBlock = true;
-          } 
-          else if (cell.type === 'TOXIN') {
-            newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: 'PURPLE' });
-          }
-          else if (cell.type === 'PRISM') {
-            const variant = cell.variant;
-            
-            if (variant === 'up') {
-              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: -1, dc: 0, color: beam.color });
-              else if (beam.dr === 1) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 0, dc: 1, color: beam.color });
-            }
-            else if (variant === 'down') {
-              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 1, dc: 0, color: beam.color });
-              else if (beam.dr === -1) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 0, dc: 1, color: beam.color });
-            }
-            else if (variant === 'split_up') {
-              newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
-              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: -1, dc: 0, color: beam.color });
-            }
-            else if (variant === 'split_down') {
-               newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
-               if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 1, dc: 0, color: beam.color });
-            }
-          }
-        } else {
-          newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
-        }
-
-        if (!hitBlock) {
-          nextBeams.push(...newBeamsFromHere);
-        }
-      }
-      activeBeams = nextBeams;
-    }
-
-    setBeams(beamHistory);
-
-    if (success) {
-      setStatus("SUCCESS");
-      setLogMessage("CIRCUIT COMPLETED. AUTHENTICATING...");
-      setTimeout(onUnlock, 1500);
-    } else {
-      setStatus("FAIL");
-      setLogMessage(failReason || "SIGNAL LOST. ADJUST PRISMS.");
-    }
-  };
-
-  return (
-    <div className="w-full h-full bg-black text-green-500 font-mono p-4 flex flex-col items-center justify-center select-none overflow-y-auto">
-      
-      {/* HEADER: CASE FILE SWITCHER */}
-      <div className="w-full max-w-4xl flex gap-2 mb-4 overflow-x-auto pb-2">
-        {Object.values(PRISM_CASES).map((c: any) => (
-          <button
-            key={c.id}
-            onClick={() => setCurrentCase(c)}
-            className={`px-4 py-2 border rounded text-xs whitespace-nowrap transition-all
-              ${currentCase.id === c.id 
-                ? 'bg-green-900 border-green-500 text-white' 
-                : 'bg-gray-900 border-gray-700 text-gray-500 hover:border-green-800'}`}
-          >
-            {c.title}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl">
-        
-        {/* LEFT: AUTOPSY REPORT */}
-        <div className="w-full md:w-1/3 bg-gray-900/50 border border-green-800 p-4 rounded-lg h-fit">
-          <h3 className="text-xl font-bold text-white mb-2 border-b border-green-800 pb-2">
-            AUTOPSY: {currentCase.element}
-          </h3>
-          <ul className="text-sm space-y-3 text-green-300/80">
-            {currentCase.autopsy.map((line: string, i: number) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-green-600">➤</span> {line}
-              </li>
-            ))}
-          </ul>
-          
-          {/* LOG CONSOLE */}
-          <div className="mt-6 p-2 bg-black border border-green-900 font-mono text-xs h-24 overflow-y-auto">
-            <p className="text-gray-500">System Log:</p>
-            <p className={status === "FAIL" ? "text-red-500" : "text-green-400"}>
-              {">"} {logMessage}
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT: CIRCUIT BOARD */}
-        <div className="w-full md:w-2/3 flex flex-col items-center">
-          
-          {/* GRID */}
-          <div className="relative bg-black border-4 border-gray-800 p-2 rounded-xl shadow-[0_0_30px_rgba(0,255,0,0.1)]">
-            <div 
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${currentCase.gridSize.c}, 50px)` }}
-            >
-              {grid.map((row: any, r: number) => (
-                row.map((cell: any, c: number) => {
-                  const isSource = r === currentCase.source.r && c === currentCase.source.c;
-                  const isReceiver = r === currentCase.receiver.r && c === currentCase.receiver.c;
-                  
-                  const activeBeam = beams.find((b: any) => b.r === r && b.c === c);
-                  
-                  return (
-                    <div 
-                      key={`${r}-${c}`}
-                      onClick={() => handleCellClick(r, c)}
-                      className={`
-                        w-[50px] h-[50px] border border-gray-900 flex items-center justify-center text-xl relative transition-all cursor-pointer
-                        ${cell?.type === 'BLOCK' ? 'bg-amber-900/40 border-amber-800' : ''}
-                        ${cell?.type === 'TOXIN' ? 'bg-purple-900/40 border-purple-800' : ''}
-                        ${isSource ? 'bg-green-900/20' : ''}
-                        ${isReceiver ? 'bg-blue-900/20' : ''}
-                        ${activeBeam ? 'shadow-[inset_0_0_10px_rgba(0,255,0,0.2)]' : ''}
-                      `}
-                    >
-                      {isSource && <span className="text-green-500 text-2xl animate-pulse">{PRISM_ICONS.SOURCE}</span>}
-                      {isReceiver && <span className={`text-2xl ${status==='SUCCESS'?'text-white animate-bounce':(currentCase.receiver.type==='REQUIRES_PURPLE'?'text-purple-400':'text-blue-400')}`}>{PRISM_ICONS.RECEIVER}</span>}
-                      {cell?.type === 'BLOCK' && <span className="text-amber-700 text-sm">▓</span>}
-                      {cell?.type === 'TOXIN' && <span className="text-purple-500 animate-pulse">{PRISM_ICONS.TOXIN}</span>}
-                      
-                      {cell?.type === 'PRISM' && (
-                        <div className="text-yellow-400 text-2xl font-bold drop-shadow-[0_0_5px_yellow]">
-                          {cell.variant === 'up' && PRISM_ICONS.UP}
-                          {cell.variant === 'down' && PRISM_ICONS.DOWN}
-                          {cell.variant === 'split_up' && PRISM_ICONS.SPLIT_UP}
-                          {cell.variant === 'split_down' && PRISM_ICONS.SPLIT_DOWN}
-                        </div>
-                      )}
-
-                      {activeBeam && (
-                        <div className={`absolute w-2 h-2 rounded-full z-10
-                          ${activeBeam.color === 'PURPLE' ? 'bg-purple-400 shadow-[0_0_8px_purple]' : 'bg-green-400 shadow-[0_0_8px_green]'}
-                        `}></div>
-                      )}
-                    </div>
-                  );
-                })
-              ))}
-            </div>
-          </div>
-
-          {/* INVENTORY TOOLBAR */}
-          <div className="mt-6 flex gap-4 flex-wrap justify-center">
-            <div className="flex gap-2 p-2 bg-gray-800 rounded-lg border border-gray-700">
-              {Object.entries(inventory).map(([key, count]) => (
-                <button
-                  key={key}
-                  disabled={count <= 0}
-                  onClick={() => setSelectedTool(key)}
-                  className={`
-                    w-16 h-16 flex flex-col items-center justify-center rounded border-2 transition-all
-                    ${selectedTool === key 
-                      ? 'border-yellow-400 bg-yellow-900/20 text-yellow-400' 
-                      : count > 0 
-                        ? 'border-gray-600 bg-black text-gray-400 hover:border-gray-400'
-                        : 'border-gray-800 bg-gray-900 text-gray-700 cursor-not-allowed'}
-                  `}
-                >
-                  <span className="text-2xl">
-                    {key === 'up' && PRISM_ICONS.UP}
-                    {key === 'down' && PRISM_ICONS.DOWN}
-                    {key === 'split_up' && PRISM_ICONS.SPLIT_UP}
-                    {key === 'split_down' && PRISM_ICONS.SPLIT_DOWN}
-                  </span>
-                  <span className="text-[10px] mt-1">x{count}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={activateCircuit}
-                disabled={status === "ACTIVE" || status === "SUCCESS"}
-                className="h-full px-6 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 text-white font-bold rounded border border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.3)]"
-              >
-                {status === "ACTIVE" ? "PROCESSING..." : "ACTIVATE"}
-              </button>
-              <button 
-                onClick={resetLevel}
-                className="px-6 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs border border-red-900 rounded"
-              >
-                RESET SYSTEM
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Ritual Cipher OTP Puzzle (Phone 2 Gate) ---
-const RitualCipherOTP = ({ onUnlock }: { onUnlock: () => void }) => {
-  const [rawOTP, setRawOTP] = useState([0, 0, 0, 0]); // รหัสดิบที่โชว์
-  const [inputOTP, setInputOTP] = useState(["", "", "", ""]); // ช่องกรอก
-  const [trueOTP, setTrueOTP] = useState(""); // คำตอบที่ถูกต้อง (คำนวณแล้ว)
-  const [status, setStatus] = useState("IDLE"); // IDLE, SUCCESS, FAIL
-
-  // สร้างโจทย์ใหม่
-  useEffect(() => {
-    generateNewOTP();
-  }, []);
-
-  const generateNewOTP = () => {
-    // สุ่มเลข 4 ตัว (เพื่อไม่ให้ยากไป พยายามเลี่ยงเลข 0 หรือเลขที่คำนวณยากๆ ได้)
-    const d1 = Math.floor(Math.random() * 6) + 1; // 1-6 (เพื่อบวก 3 ไม่เกิน 9)
-    const d2 = Math.floor(Math.random() * 8) + 2; // 2-9 (เพื่อลบ 2 ไม่ติดลบ)
-    const d3 = Math.floor(Math.random() * 5);     // 0-4 (เพื่อคูณ 2 ไม่เกิน 9 ง่ายๆ)
-    const d4 = Math.floor(Math.random() * 9) + 1; // 1-9
-
-    setRawOTP([d1, d2, d3, d4]);
-    setInputOTP(["", "", "", ""]);
-    setStatus("IDLE");
-
-    // คำนวณเฉลยล่วงหน้า
-    const ans1 = d1 + 3;          // ดิน: ถม 3
-    const ans2 = d2 - 2;          // น้ำ: หาย 2
-    const ans3 = (d3 * 2) % 10;   // ลม: เงายาว 2 เท่า (เอาหลักหน่วย)
-    const ans4 = Math.floor(d4 / 2); // ไฟ: เหลือครึ่งเดียว
-
-    setTrueOTP(`${ans1}${ans2}${ans3}${ans4}`);
-  };
-
-  const handleInput = (val: string, index: number) => {
-    if (isNaN(Number(val))) return;
-    const newInputs = [...inputOTP];
-    newInputs[index] = val.slice(-1); // เอาแค่ตัวล่าสุด
-    setInputOTP(newInputs);
-
-    // Auto focus next input
-    if (val && index < 3) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      if (nextInput) (nextInput as HTMLInputElement).focus();
-    }
-  };
-
-  const checkOTP = () => {
-    const entered = inputOTP.join("");
-    if (entered.length < 4) return;
-
-    if (entered === trueOTP) {
-      setStatus("SUCCESS");
-      setTimeout(onUnlock, 1500);
-    } else {
-      setStatus("FAIL");
-      // สั่นเตือนและล้างค่า
-      if (navigator.vibrate) navigator.vibrate(500);
-      setTimeout(() => {
-        setStatus("IDLE");
-        setInputOTP(["", "", "", ""]);
-        const firstInput = document.getElementById(`otp-0`);
-        if (firstInput) (firstInput as HTMLInputElement).focus();
-      }, 1000);
-    }
-  };
-
-  // ตรวจสอบเมื่อกรอกครบ
-  useEffect(() => {
-    if (inputOTP.every(n => n !== "")) {
-      checkOTP();
-    }
-  }, [inputOTP]);
-
-  return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 font-mono flex flex-col items-center justify-center p-6">
-      
-      {/* 1. ส่วนแสดงรหัสดิบ (The Clue) */}
-      <div className="w-full max-w-sm bg-black border border-gray-700 rounded-xl p-6 mb-8 text-center shadow-2xl relative overflow-hidden">
-        <h2 className="text-gray-500 text-xs tracking-[0.3em] mb-4">INCOMING SOUL SIGNAL</h2>
-        
-        {/* RAW CODE DISPLAY */}
-        <div className="flex justify-center gap-4 mb-2">
-          {rawOTP.map((digit, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className="text-4xl font-bold text-white mb-2">{digit}</div>
-              
-              {/* Element Icon/Hint */}
-              <div className={`text-[10px] px-2 py-0.5 rounded border 
-                ${i===0 ? 'border-amber-700 text-amber-600' : 
-                  i===1 ? 'border-blue-700 text-blue-600' : 
-                  i===2 ? 'border-gray-600 text-gray-500' : 'border-red-700 text-red-600'}`}>
-                {i===0 ? "N (ดิน)" : i===1 ? "E (น้ำ)" : i===2 ? "S (ลม)" : "W (ไฟ)"}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Poem Hint Mini */}
-        <div className="mt-4 pt-4 border-t border-gray-800 text-[10px] text-gray-600 grid grid-cols-2 gap-2 text-left">
-          <p>N: "ทับถมเพิ่มพูน (+3)"</p>
-          <p>E: "พัดพาหายไป (-2)"</p>
-          <p>S: "เงาขยายตัว (x2)"</p>
-          <p>W: "ร่างแยกสลาย (÷2)"</p>
-        </div>
-      </div>
-
-      {/* 2. ส่วนกรอกรหัส (The Input) */}
-      <div className="w-full max-w-xs">
-        <p className="text-center text-xs mb-4 text-green-500">
-           {status === "FAIL" ? "CALCULATION ERROR: RITUAL FAILED" : 
-            status === "SUCCESS" ? "AUTHENTICATION VERIFIED" : 
-            "ENTER PROCESSED RITUAL CODE"}
-        </p>
-
-        <div className="flex justify-between gap-2">
-          {inputOTP.map((digit, i) => (
-            <input
-              key={i}
-              id={`otp-${i}`}
-              type="tel"
-              value={digit}
-              onChange={(e) => handleInput(e.target.value, i)}
-              maxLength={1}
-              className={`w-14 h-16 bg-gray-800 text-center text-3xl font-bold rounded-lg border-2 outline-none transition-all
-                ${status === "FAIL" ? "border-red-500 text-red-500 animate-pulse" : 
-                  status === "SUCCESS" ? "border-green-500 text-green-500" : 
-                  "border-gray-600 focus:border-green-500 text-white"}`}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-8 text-center opacity-30 text-xs">
-         SECURE TRANSMISSION PROTOCOL V.4
-      </div>
-
-    </div>
-  );
-};
-
-// ParallaxLock component removed - replaced with PrismMechanics puzzle
-
 // --- Mock Data ---
-// ในการใช้งานจริง ให้เปลี่ยน path ของรูปภาพให้ตรงกับ assets ของคุณ
 const STAGE_DATA = {
   phone1: {
     dates: "5, 12, 20",
@@ -540,145 +38,10 @@ const STAGE_DATA = {
 เผาร่างให้ เกรียมกรม สมเหตุผล กระตุ้นเนื้อ ที่มอดไหม้ ให้ร้อนรน ปลุกชีพคน ให้ฟื้น ตื่นนิทราฯ`
 };
 
-// --- Forensic Data Table ---
-const FORENSIC_TABLE = [
-  { cat: 'CAUSE', find: 'Asphyxia (General)', code: '8A' },
-  { cat: 'CAUSE', find: 'Suffocation (Soil)', code: '8E' }, // Correct North
-  { cat: 'CAUSE', find: 'Drowning (Water)', code: '8W' },
-  { cat: 'TRACE', find: 'Puncture (Insect)', code: '2B' },
-  { cat: 'TRACE', find: 'Puncture (Needle)', code: '2N' }, // Correct East
-  { cat: 'TRACE', find: 'Laceration (Cut)', code: '2C' },
-  { cat: 'OBJECT', find: 'Rope (Hemp)', code: '5H' },
-  { cat: 'OBJECT', find: 'Rope (Wire)', code: '5W' },
-  { cat: 'OBJECT', find: 'Rope (Nylon)', code: '5Y' }, // Correct South
-];
-
-// --- Tri-Elemental Lock (Forensic Code Puzzle) ---
-const HardMasterLock = ({ onUnlock }: { onUnlock: () => void }) => {
-  const [input, setInput] = useState('');
-  const [error, setError] = useState(false);
-  const [shake, setShake] = useState(false);
-
-  // Answer: E8 + O2 + 5Y = E8O25Y
-  const CORRECT_HASH = "E8O25Y";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanInput = input.toUpperCase().replace(/[\s-]/g, '');
-
-    console.log('Input:', cleanInput, 'Expected:', CORRECT_HASH, 'Match:', cleanInput === CORRECT_HASH);
-
-    if (cleanInput === CORRECT_HASH) {
-      onUnlock();
-    } else {
-      // Trap alerts for common mistakes
-      if (cleanInput === "8E2N5Y") {
-        alert("SECURITY ALERT: Time & Element protocols ignored.");
-      } else if (cleanInput === "E8N2Y5") {
-        alert("SECURITY ALERT: Elemental Shift required. \n(Did you shift the Water letter? Did you reverse the Wind?)");
-      } else if (cleanInput.includes("N2")) {
-        alert("HINT: Water element flows forward... (Letter +1)");
-      }
-      
-      setError(true);
-      setShake(true);
-      setInput('');
-      setTimeout(() => {
-        setError(false);
-        setShake(false);
-      }, 500);
-    }
-  };
-
-  return (
-    <div className="w-full max-w-4xl bg-gray-900/90 border-2 border-green-900 p-8 rounded-xl shadow-[0_0_50px_rgba(34,197,94,0.1)]">
-      
-      {/* Header */}
-      <div className="flex justify-between items-end border-b-2 border-green-800 pb-4 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-[0.2em] text-green-400">TRI-ELEMENTAL LOCK</h2>
-          <p className="text-xs text-green-700 mt-1">BIOMETRIC VERIFICATION: SUCCESS</p>
-        </div>
-        <div className="text-4xl text-green-500 animate-pulse">🔒</div>
-      </div>
-
-      {/* Instructions Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Left: Logic Rules */}
-        <div className="bg-black/50 p-4 rounded border border-green-900 text-sm">
-          <h3 className="text-green-400 font-bold mb-2 border-b border-green-900 pb-1">DECRYPTION PROTOCOLS</h3>
-          <ul className="space-y-2 text-gray-400">
-            <li>1. <span className="text-white">FIND CODE</span> from Table using Autopsy Data.</li>
-            <li>2. <span className="text-yellow-400">TIME CHECK:</span> If 00:00-05:59 → <b>SWAP Digits</b> (e.g., 8E → E8).</li>
-            <li>3. <span className="text-cyan-400">ELEMENTAL SHIFT:</span> Apply after Time Check.</li>
-          </ul>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-orange-900/30 p-1 rounded text-orange-400 border border-orange-900">
-              EARTH<br/><span className="text-white">Stable</span>
-            </div>
-            <div className="bg-blue-900/30 p-1 rounded text-blue-400 border border-blue-900">
-              WATER<br/><span className="text-white">Letter +1</span>
-            </div>
-            <div className="bg-gray-700/30 p-1 rounded text-gray-400 border border-gray-600">
-              WIND<br/><span className="text-white">Swap Again</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Input Area */}
-        <div className="flex flex-col justify-center items-center bg-green-900/10 p-4 rounded border border-green-500/30">
-          <p className="mb-4 text-green-300 text-sm">ENTER FINAL 6-DIGIT HASH</p>
-          <form onSubmit={handleSubmit} className="w-full">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="______"
-              maxLength={6}
-              className={`w-full bg-black border-b-4 text-center text-4xl py-2 text-green-400 outline-none tracking-[0.5em] uppercase placeholder-green-900/30 transition-all font-mono
-                ${shake ? 'border-red-500 text-red-500 animate-shake' : 'border-green-600 focus:border-green-400'}
-              `}
-            />
-          </form>
-          {error && <p className="text-red-500 text-xs mt-2 animate-pulse">ACCESS DENIED: INVALID SEQUENCE</p>}
-        </div>
-      </div>
-
-      {/* Reference Table */}
-      <div className="border-t border-green-900 pt-4">
-        <p className="text-xs text-gray-500 mb-2 text-center">- FORENSIC CODE DATABASE -</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-          {FORENSIC_TABLE.map((item, idx) => (
-            <div key={idx} className="flex justify-between items-center px-3 py-2 bg-gray-900 hover:bg-gray-800 border-l-2 border-transparent hover:border-green-500 transition-colors">
-              <span className="text-gray-400">{item.find}</span>
-              <span className="font-mono font-bold text-green-600 bg-green-900/10 px-2 rounded">{item.code}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <style>{`
-        .animate-shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-      `}</style>
-    </div>
-  );
-};
-
 const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete: () => void; status: CaseStatus; onRequestHint: () => void }) => {
   const [activeDevice, setActiveDevice] = useState<DeviceType>('NONE');
   const [unlockedDevices, setUnlockedDevices] = useState<string[]>([]);
   
-  // --- Phone 1 State ---
-  const [phone1Input, setPhone1Input] = useState('');
-  const [phone1Error, setPhone1Error] = useState(false);
-  const [phone1ShowHint, setPhone1ShowHint] = useState(false);
-
   // --- Phone 2 State ---
   const [phone2PuzzleCleared, setPhone2PuzzleCleared] = useState(false);
 
@@ -698,24 +61,6 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
 
   // --- Handlers ---
 
-  const handlePhone1Unlock = (num: string) => {
-    if (phone1Input.length < 4) {
-      const newVal = phone1Input + num;
-      setPhone1Input(newVal);
-      if (newVal.length === 4) {
-        if (newVal === STAGE_DATA.phone1.passcode) {
-          setUnlockedDevices(prev => [...prev, 'PHONE1']);
-        } else {
-          setPhone1Error(true);
-          setTimeout(() => {
-            setPhone1Input('');
-            setPhone1Error(false);
-          }, 500);
-        }
-      }
-    }
-  };
-
   const appendTerminal = (lines: string | string[]) => {
     setPcTerminalLines(prev => [...prev, ...(Array.isArray(lines) ? lines : [lines])]);
   };
@@ -732,13 +77,13 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
         'คำสั่งที่ใช้ได้: help, clear, ipconfig, netstat -ano | find "8080"'
       ]);
     } else if (lower === 'clear') {
-      setPcTerminalLines(['tu-macbook-pro:~$ type "help" เพื่อดูคำสั่งที่ใช้ได้']);
+      setPcTerminalLines(['tu-macbook-pro:~$ ']);
     } else if (lower === 'ipconfig') {
       appendTerminal([
         prompt,
         'IPv4 Address . . . . . . . . . . . : 192.168.1.10',
         'Subnet Mask  . . . . . . . . . . . : 255.255.255.0',
-        'Default Gateway . . . . . . . . . . : 192.168.1.1:8000'
+        'Default Gateway . . . . . . . . . . : 192.168.1.1:8080'
       ]);
     } else if (lower === 'netstat -ano | find "8080"') {
       appendTerminal([
@@ -811,124 +156,21 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
     </div>
   );
 
-  const renderPhone1 = () => (
-    <div className="h-full flex items-center justify-center gap-8 px-4">
-      {/* Phone Device */}
-      <div className="bg-black rounded-[3rem] border-8 border-gray-800 overflow-hidden relative shadow-2xl w-full max-w-sm h-[90vh]">
-        {!unlockedDevices.includes('PHONE1') ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 bg-[url('/api/placeholder/400/800')] bg-cover">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            {/* Back Button */}
-            <button 
-              onClick={() => setActiveDevice('NONE')} 
-              className="absolute top-12 left-6 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white backdrop-blur-sm transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="z-10 w-full">
-              <div className="text-center mb-8">
-                <Lock className="w-12 h-12 text-white mx-auto mb-2" />
-                <h3 className="text-white text-xl font-light">Enter Passcode</h3>
-                <div className="flex justify-center gap-2 mt-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className={`w-3 h-3 rounded-full ${i < phone1Input.length ? 'bg-white' : 'bg-gray-600'} ${phone1Error ? 'animate-pulse bg-red-500' : ''}`} />
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-6 max-w-[280px] mx-auto">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                  <button key={n} onClick={() => handlePhone1Unlock(n.toString())} className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl font-light transition-all active:scale-95">
-                    {n}
-                  </button>
-                ))}
-                <div />
-                <button onClick={() => handlePhone1Unlock('0')} className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl font-light transition-all active:scale-95">0</button>
-                <button onClick={() => setPhone1Input('')} className="w-16 h-16 flex items-center justify-center text-white">Del</button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="h-full bg-gray-900 flex flex-col">
-            <div className="bg-green-700 p-4 pt-8 text-white flex items-center shadow-md">
-              <button onClick={() => setActiveDevice('NONE')}><X /></button>
-              <span className="ml-4 font-bold">Group Chat (3)</span>
-            </div>
-            <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[#1e1e1e]">
-              {/* Chat Content */}
-              {[
-                 { u: 'เพื่อนตุ๊ (ชาย 2)', m: 'มึงรู้ปะ มหาลัยเราแม่งปิดเรื่องมันเงียบเลย', self: false },
-                 { u: 'เพื่อนตุ๊ (ชาย 2)', m: 'ไม่มีใครรู้ด้วยซ้ำว่ามันตาย เหมือนมีแค่พวกเรานี่แหละที่รู้', self: false },
-                 { u: 'เพื่อนตุ๊ (ชาย 1)', m: 'เออ กูนี่แหละที่ยิ่งคิดยิ่งแปลก การตายของมันมันดูเร็วไปหน่อย', self: true },
-                 { u: 'เพื่อนตุ๊ (หญิง)', m: 'งั้นอย่าเพิ่งสรุปกันเองดีกว่า ลองดูข้อมูลก่อนมั้ย', self: false },
-                 { u: 'เพื่อนตุ๊ (หญิง)', m: 'ก็ที่เกิดเหตุ เวลาที่เกิดเรื่อง แล้วก็คนที่อยู่ใกล้มันช่วงนั้น', self: false },
-                 { u: 'เพื่อนตุ๊ (ชาย 2)', m: 'งั้นเริ่มจากจุดเกิดเหตุก่อน ดูให้รู้ไปเลยว่ามันเกิดอะไรขึ้นกันแน่', self: false },
-              ].map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.self ? 'items-end' : 'items-start'}`}>
-                  <span className="text-[10px] text-gray-400 mb-1 px-1">{msg.u}</span>
-                  <div className={`p-3 rounded-xl max-w-[80%] text-sm ${msg.self ? 'bg-green-600 text-white rounded-tr-none' : 'bg-gray-700 text-gray-200 rounded-tl-none'}`}>
-                    {msg.m}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+  const renderPhone1 = () => {
+    return (
+      <Phone1Puzzle 
+        passcode={STAGE_DATA.phone1.passcode}
+        dates={STAGE_DATA.phone1.dates}
+        time={STAGE_DATA.phone1.time}
+        onUnlock={() => setUnlockedDevices(prev => [...prev, 'PHONE1'])}
+        onClose={() => setActiveDevice('NONE')}
+      />
+    );
+  };
 
-      {/* Hint Panel - Outside Phone */}
-      {!unlockedDevices.includes('PHONE1') && (
-        <div className="hidden lg:block w-80 bg-gray-900/80 border border-gray-700 rounded-xl p-6 shadow-2xl">
-          <h3 className="text-sm font-bold text-yellow-400 mb-4 flex items-center gap-2">
-            <span>💡</span> LUNAR CALENDAR HINT
-          </h3>
-          <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
-            <p className="text-gray-400">
-              <span className="font-semibold">วันจันทรคติ:</span> {STAGE_DATA.phone1.dates}<br/>
-              <span className="font-semibold">เวลาตาย:</span> {STAGE_DATA.phone1.time} (ก่อนรุ่งสาง)
-            </p>
-            <p className="text-amber-400 text-[11px] italic bg-amber-900/20 p-2 rounded border-l-2 border-amber-600">
-              * ก่อน 6 โมงเช้า = ยังนับเป็นคืนวันก่อนหน้า
-            </p>
-            <button 
-              onClick={() => setPhone1ShowHint(!phone1ShowHint)}
-              className="text-[11px] text-blue-400 hover:text-blue-300 underline w-full text-left"
-            >
-              {phone1ShowHint ? '▼ ซ่อนคำใบ้' : '▶ ดูคำใบ้เพิ่มเติม'}
-            </button>
-            {phone1ShowHint && (
-              <div className="mt-3 p-3 bg-black/40 rounded-lg text-[11px] border border-gray-700">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-700">
-                      <th className="pb-2 text-gray-400 font-semibold">วันที่</th>
-                      <th className="pb-2 text-gray-400 font-semibold">วันจันทรคติ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-300">
-                    <tr className="border-b border-gray-800">
-                      <td className="py-2">5 ม.ค.</td>
-                      <td className="py-2">ขึ้น 7 ค่ำ</td>
-                    </tr>
-                    <tr className="border-b border-gray-800">
-                      <td className="py-2">12 ม.ค.</td>
-                      <td className="py-2">ขึ้น 14 ค่ำ</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2">20 ม.ค.</td>
-                      <td className="py-2">แรม 7 ค่ำ</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderPC = () => (
-    <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden flex flex-col relative border border-gray-700">
+  const renderPC = () => {
+    return (
+      <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden flex flex-col relative border border-gray-700">
         <div className="h-8 bg-gray-800 flex items-center px-4 space-x-2 border-b border-gray-700">
           <div className="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400 transition-colors" onClick={() => { setActiveDevice('NONE'); setPcWindow('NONE'); }} title="Close" />
         <div className="w-3 h-3 rounded-full bg-yellow-500" />
@@ -1067,7 +309,8 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderPhone2 = () => (
     <div className="h-full bg-black rounded-[3rem] border-8 border-gray-800 overflow-hidden relative shadow-2xl max-w-sm mx-auto flex flex-col">
@@ -1134,9 +377,10 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
 
         {usbStep === 'PRISM' && !usbParallaxCleared && (
             <div className="w-full h-full flex items-center justify-center overflow-y-auto">
-                <PrismMechanics onUnlock={() => {
+                <TriVariablePuzzle onUnlock={() => {
                     setUsbParallaxCleared(true);
                     setUsbStep('UNLOCKED');
+                    setUnlockedDevices(prev => [...prev, 'USB']);
                 }} />
             </div>
         )}
