@@ -115,7 +115,7 @@ export const CORPSES_DATA = [
             "ข้อความที่ถูกถอดรหัส : A MAN STALKING ME",
             "สรุป: คาดว่าผู้ตายได้บอกใบ้ก่อนตายว่าคนร้ายเป็นผู้ชาย",
         ],
-        poem: "\n\nD PDQ",
+        poem: "\n\nD PDQ VWDONLQJ PH",
   
     }
 ];
