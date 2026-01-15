@@ -46,6 +46,7 @@ const TriVariablePuzzle = ({ onUnlock }: TriVariablePuzzleProps) => {
     return () => clearInterval(interval);
   }, [isTiming]);
 
+  // Toggle timer (Manual START/STOP)
   const toggleTimer = () => {
     if (isTiming) {
       setIsTiming(false);
@@ -154,42 +155,105 @@ const TriVariablePuzzle = ({ onUnlock }: TriVariablePuzzleProps) => {
           </div>
         )}
 
-        {/* --- SCENE 2: EAST (WATER) --- */}
+        {/* --- SCENE 2: EAST (WATER) - FIXED PHYSICS VISUALS --- */}
         {activeTab === 1 && (
-          <div className="w-full h-full flex flex-col p-6 relative">
-             <h3 className="text-white border-b border-gray-700 mb-4">OBJ 2: CALCULATE REFRACTION (R)</h3>
-             <div className="flex gap-8 h-full">
-                {/* Image: Refraction Angle */}
-                <div className="w-1/2 bg-blue-900/10 relative h-[300px] border border-blue-500/30 flex items-center justify-center">
-                   {/* Laser Beam */}
-                   <div className="absolute w-[200px] h-1 bg-green-500 top-1/2 left-10" style={{ transformOrigin: 'right center', transform: 'rotate(-10deg)' }}></div>
-                   <div className="absolute w-[200px] h-1 bg-green-500/50 top-1/2 right-[-90px]" style={{ transformOrigin: 'left center', transform: 'rotate(20deg)' }}></div>
+          <div className="w-full h-full flex flex-col p-6 relative animate-in fade-in">
+             <h3 className="text-white border-b border-gray-700 mb-4 pb-2">OBJ 2: CALCULATE REFRACTION (R)</h3>
+             <div className="flex flex-col md:flex-row gap-8 h-full">
+                
+                {/* Visual Area */}
+                <div className="w-full md:w-1/2 bg-blue-900/10 relative h-[350px] border border-blue-500/30 flex items-center justify-center overflow-hidden rounded">
                    
-                   {/* Interactive Protractor */}
-                   <div className="absolute w-[200px] h-[100px] rounded-t-full bg-white/20 border-b-2 border-white backdrop-blur-sm flex justify-center items-end"
-                        style={{ transform: `rotate(${protractorAngle}deg)` }}>
-                      <div className="w-1 h-2 bg-red-500 absolute bottom-0"></div>
-                      <span className="text-xs absolute top-2">{protractorAngle}°</span>
+                   {/* Center Anchor Point */}
+                   <div className="relative w-0 h-0 flex items-center justify-center">
+
+                       {/* Normal Line (Vertical - แกนอ้างอิง 0 องศา) */}
+                       <div className="absolute w-[1px] h-[400px] bg-transparent border-l border-dashed border-gray-400/50 -top-[200px]"></div>
+
+                       {/* Water Surface (Horizontal) */}
+                       <div className="absolute w-[400px] h-[1px] bg-blue-400/50"></div>
+
+                       {/* Incident Ray (แสงขาเข้า - จากอากาศ) */}
+                       {/* เข้ามาเอียงๆ 45 องศา */}
+                       <div className="absolute h-[200px] w-1 bg-green-600/40 bottom-0 right-0 origin-bottom" 
+                            style={{ transform: 'rotate(45deg)' }}>
+                            {/* หัวลูกศรบอกทิศทาง */}
+                            <div className="absolute top-10 left-[-2px] text-green-400 text-xs transform rotate-180">▼</div>
+                       </div>
+
+                       {/* Refracted Ray (แสงหักเห - ในน้ำ) */}
+                       {/* ฟิสิกส์จริง: แสงต้องเบนเข้าหาแกนกลาง (มุมน้อยลง) */}
+                       {/* ตั้งค่าเป้าหมายไว้ที่ 22 องศา (เห็นชัดเจน) */}
+                       <div className="absolute h-[200px] w-[2px] bg-green-400 top-0 left-0 origin-top shadow-[0_0_10px_#4ade80]" 
+                            style={{ transform: 'rotate(-158deg)' }}> {/* 180 - 22 = 158 (ทิศลง) */}
+                       </div>
+
+                       {/* Protractor Tool (ไม้โปรแทรกเตอร์) */}
+                       <div className="absolute w-[280px] h-[140px] rounded-b-[140px] bg-white/10 border-2 border-white/30 backdrop-blur-sm top-0 -left-[140px] flex justify-center items-start overflow-hidden z-10"
+                            style={{ 
+                                // จุดหมุนอยู่ตรงกลางบน (ผิวน้ำ)
+                                transformOrigin: 'top center', 
+                                // ผู้เล่นหมุนค่า protractorAngle (0 ถึง 45)
+                                transform: `rotate(${protractorAngle}deg)` 
+                            }}>
+                          
+                          {/* Measurement Line (Red) */}
+                          <div className="absolute top-0 w-[2px] h-full bg-red-600 origin-top shadow-[0_0_5px_red]"></div>
+                          <div className="absolute top-0 w-4 h-4 bg-red-600 rounded-full -mt-2"></div>
+                          
+                          {/* Scale Marks */}
+                          {[...Array(13)].map((_, i) => (
+                             <div key={i} className="absolute top-0 w-[1px] h-4 bg-white/70 origin-top" 
+                                  style={{ transform: `rotate(${(i-6)*10}deg) translateY(120px)` }}>
+                                  {/* ตัวเลขสเกลเล็กๆ */}
+                                  <span className="block mt-4 text-[8px] text-center -ml-1 text-gray-400">{Math.abs((i-6)*10)}</span>
+                             </div>
+                          ))}
+
+                          {/* Digital Angle Readout */}
+                          <span className="absolute bottom-4 text-2xl font-bold text-white drop-shadow-md font-mono">{Math.abs(protractorAngle)}°</span>
+                       </div>
+
                    </div>
+                   
+                   <div className="absolute top-2 left-2 text-[10px] text-gray-400">AIR (n=1.0)</div>
+                   <div className="absolute bottom-2 right-2 text-[10px] text-blue-300">WATER (n=1.33)</div>
                 </div>
 
-                {/* Tools */}
-                <div className="w-1/2 flex flex-col gap-4">
-                  <div className="bg-slate-900 p-2 border border-slate-600 text-xs">
-                     <p>MEASURE THE DEVIATION ANGLE.</p>
-                     <p className="text-red-400 mt-2">REQUIREMENT: VARIABLE [P] IS NEEDED.</p>
+                {/* Controls */}
+                <div className="w-full md:w-1/2 flex flex-col gap-4">
+                  <div className="bg-slate-900 p-3 border border-slate-600 text-xs text-gray-300 rounded">
+                     <p className="font-bold text-white mb-1 underline">INSTRUCTION:</p>
+                     <ul className="list-disc pl-4 space-y-1">
+                        <li>หมุนไม้โปรแทรกเตอร์ วัดมุมของ <span className="text-green-400 font-bold">เส้นแสงในน้ำ</span> เทียบกับแกนกลาง</li>
+                        <li>(แสงเบนเข้าหาแกนกลาง ตามกฎการหักเห)</li>
+                     </ul>
+                     <p className="text-red-400 mt-2 font-bold border-t border-gray-700 pt-2">REQUIREMENT: VARIABLE [P] FROM NORTH.</p>
                   </div>
 
-                  <div className="bg-slate-800 p-4 rounded">
-                     <label className="text-xs block mb-2">ROTATE PROTRACTOR</label>
-                     <input type="range" min="-90" max="90" value={protractorAngle} onChange={handleRotateProtractor} className="w-full"/>
+                  <div className="bg-slate-800 p-4 rounded shadow-inner border border-slate-600">
+                     <div className="flex justify-between text-xs mb-2 text-cyan-400 font-bold">
+                        <span>0°</span>
+                        <span>ANGLE: {protractorAngle}°</span>
+                        <span>45°</span>
+                     </div>
+                     <input 
+                        type="range" 
+                        min="0" 
+                        max="45" 
+                        step="1"
+                        value={protractorAngle} 
+                        onChange={handleRotateProtractor} 
+                        className="w-full cursor-pointer accent-cyan-500 h-2 bg-gray-700 rounded-lg appearance-none"
+                     />
                   </div>
 
                   <div className="mt-auto">
-                     <p className="text-xs text-gray-400 mb-1">FORMULA: ∇ (P - ANGLE) / 2</p>
+                     {/* แก้สูตรใหม่เพื่อให้ Make Sense กับมุม 22 องศา */}
+                     <p className="text-xs text-gray-400 mb-1 font-mono">FORMULA: ∇ (ANGLE - P) / 2</p>
                      <input type="number" placeholder="Enter Value R" 
-                       className="w-full bg-slate-900 border border-cyan-800 p-2 text-white"
-                       value={userVals.R} onChange={(e) => setUserVals({...userVals, R: e.target.value})}
+                       className="w-full bg-slate-900 border border-cyan-800 p-3 text-white text-lg font-mono focus:border-cyan-500 outline-none rounded"
+                       value={userVals.R} onChange={(e) => setUserVals({...userVals, R: e.target.value.replace(/[^0-9]/g, '')})}
                      />
                   </div>
                 </div>
@@ -197,40 +261,70 @@ const TriVariablePuzzle = ({ onUnlock }: TriVariablePuzzleProps) => {
           </div>
         )}
 
-        {/* --- SCENE 3: SOUTH (WIND) --- */}
+        {/* --- SCENE 3: SOUTH (WIND) - PENDULUM --- */}
         {activeTab === 2 && (
-           <div className="w-full h-full flex flex-col p-6 relative">
-              <h3 className="text-white border-b border-gray-700 mb-4">OBJ 3: CALCULATE PERIOD (T)</h3>
-              <div className="flex gap-8 h-full">
-                 {/* Animation: Pendulum */}
-                 <div className="w-1/2 bg-gray-900 relative h-[300px] border border-gray-700 flex justify-center overflow-hidden">
-                    <div className="origin-top animate-[swing_4s_infinite_ease-in-out]">
-                       <div className="w-1 h-[200px] bg-gray-500 mx-auto"></div>
-                       <div className="w-12 h-16 bg-gray-700 rounded border border-gray-500 flex items-center justify-center text-xs">BODY</div>
-                    </div>
-                    <style>{`@keyframes swing { 0%,100% { transform: rotate(25deg); } 50% { transform: rotate(-25deg); } }`}</style>
-                 </div>
+          <div className="w-full h-full flex flex-col p-6 relative animate-in fade-in">
+             <h3 className="text-white border-b border-gray-700 mb-4 pb-2">OBJ 3: CALCULATE PERIOD (T)</h3>
+             <div className="flex flex-col md:flex-row gap-8 h-full">
+                {/* Animation: Pendulum */}
+                <div className="w-full md:w-1/2 bg-gray-900 relative h-[350px] border border-gray-700 flex justify-center overflow-hidden rounded">
+                   {/* เพิ่มเงื่อนไข: ถ้ากำลังวัด (isTiming) ให้โชว์เส้น Grid หรือ Effect การวัด */}
+                   {isTiming && (
+                      <div className="absolute inset-0 z-0 opacity-20">
+                          <div className="w-full h-full border-2 border-red-500 animate-pulse"></div>
+                          <div className="absolute top-1/2 w-full h-[1px] bg-red-500"></div>
+                          <div className="absolute left-1/2 h-full w-[1px] bg-red-500"></div>
+                      </div>
+                   )}
+                   
+                   <div className="origin-top z-10" style={{
+                     animation: isTiming ? 'swing 4s infinite ease-in-out' : 'none',
+                     transformOrigin: 'top center'
+                   }}>
+                      <div className="w-1 h-[250px] bg-gray-500 mx-auto"></div>
+                      <div className="w-16 h-20 bg-gray-700 rounded border border-gray-500 flex items-center justify-center text-xs shadow-xl relative">
+                        CORPSE<br/>30kg
+                        {/* จุดเลเซอร์แดงๆ เวลากำลังวัด */}
+                        {isTiming && <div className="absolute w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red] animate-ping"></div>}
+                      </div>
+                   </div>
+                   <style>{`@keyframes swing { 0%,100% { transform: rotate(25deg); } 50% { transform: rotate(-25deg); } }`}</style>
+                   <div className="absolute bottom-2 text-[10px] text-gray-500">PENDULUM SIMULATION</div>
+                </div>
 
-                 {/* Tools */}
-                 <div className="w-1/2 flex flex-col gap-4">
-                    <div className="bg-slate-900 p-2 border border-slate-600 text-xs">
-                       <p>COUNT THE OSCILLATIONS (SWINGS).</p>
-                       <p className="text-red-400 mt-2">REQUIREMENT: VARIABLE [R] IS NEEDED.</p>
+                 {/* Controls & Timer */}
+                 <div className="w-full md:w-1/2 flex flex-col gap-4">
+                    <div className="bg-slate-900 p-3 border border-slate-600 text-xs rounded">
+                       <p className="text-gray-300">SYSTEM WILL MEASURE 1 FULL OSCILLATION CYCLE.</p>
+                       <p className="text-red-400 mt-2 font-bold border-t border-gray-700 pt-1">REQUIREMENT: VARIABLE [R] FROM EAST.</p>
                     </div>
 
-                    <div className="bg-slate-800 p-4 rounded text-center">
-                       <div className="text-4xl font-mono text-red-500 mb-2">
+                    <div className="bg-slate-800 p-6 rounded text-center border border-slate-600">
+                       <label className="text-xs text-gray-400 block mb-2">LASER CHRONOMETER</label>
+                       <div className="text-5xl font-mono text-red-500 mb-4 bg-black p-2 rounded border border-red-900/50">
                          {(timer / 1000).toFixed(2)}s
                        </div>
-                       <button onClick={toggleTimer} className={`px-4 py-2 w-full rounded font-bold ${isTiming ? 'bg-red-900 text-red-100' : 'bg-green-900 text-green-100'}`}>
-                          {isTiming ? "STOP" : "START / RESET"}
-                       </button>
+                       
+                       {/* ปุ่มจับเวลา START/STOP */}
+                       <div className="flex gap-2">
+                         <button onClick={toggleTimer}
+                           className={`flex-1 px-4 py-3 rounded font-bold transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2
+                           ${isTiming 
+                             ? 'bg-red-900 hover:bg-red-800 text-red-100 border border-red-700' 
+                             : 'bg-green-900 hover:bg-green-800 text-green-100 border border-green-700'}`}>
+                            {isTiming ? "⏹ STOP" : "▶ START"}
+                         </button>
+                         <button onClick={() => { setTimer(0); setIsTiming(false); }}
+                           className="flex-1 px-4 py-3 rounded font-bold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 transition-all">
+                            ⟲ RESET
+                         </button>
+                       </div>
                     </div>
 
                     <div className="mt-auto">
-                       <p className="text-xs text-gray-400 mb-1">FORMULA: Δ (R + PERIOD)</p>
+                       <p className="text-xs text-gray-400 mb-1 font-mono">FORMULA: Δ (R + PERIOD)</p>
                        <input type="number" placeholder="Enter Value T" 
-                         className="w-full bg-slate-900 border border-cyan-800 p-2 text-white"
+                         className="w-full bg-slate-900 border border-cyan-800 p-3 text-white text-lg font-mono focus:border-cyan-500 outline-none rounded"
                          value={userVals.T} onChange={(e) => setUserVals({...userVals, T: e.target.value})}
                        />
                     </div>
