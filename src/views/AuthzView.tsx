@@ -16,34 +16,36 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
   
   // --- LOGIC: NETWORK ---
   const [netLogs, setNetLogs] = useState<string[]>([
-    '[SYSTEM] Initializing secure connection adapter...',
-    '[INFO] Loading configuration: NOD-77_INTERNAL_PROFILE',
-    '[WARN] Target unreachable at default gateway.',
-    '[ERROR] Connection handshake failed. Target refused connection on port 80.',
-    '[HINT] Manual override required via Developer Console.'
+    '[SYSTEM] กำลังเริ่มต้นอะแดปเตอร์เชื่อมต่อแบบปลอดภัย...',
+    '[INFO] กำลังโหลดโปรไฟล์: NOD-77_INTERNAL_PROFILE',
+    '[WARN] ไม่สามารถติดต่อเกตเวย์เริ่มต้นได้',
+    '[ERROR] การจับมือ (Handshake) ล้มเหลว เป้าหมายปฏิเสธการเชื่อมต่อที่พอร์ต 80',
+    '[DEBUG] GUI ล้มเหลว. เปลี่ยนเป็นโหมดควบคุมด้วยคำสั่ง (Console Override)'
   ]);
 
   useEffect(() => {
     if (phase === 'NETWORK') {
+      // Backdoor Function
       (window as any).inject_packet = (ip: string, port: string) => {
-        console.log(`[DEBUG] Override initiated > ${ip}:${port}`);
+        console.log(`%c[DEBUG] เริ่มต้นการเขียนทับ Packet > ${ip}:${port}`, 'color: yellow');
         
         if (ip === '192.168.1.10' && port === '8080') {
-          console.log('[SUCCESS] Handshake accepted.');
-          setNetLogs(prev => [...prev, `[INFO] Override success: Connected to ${ip}:${port}`, '[INFO] Authenticating...']);
+          console.log('%c[SUCCESS] การจับมือสำเร็จ อนุญาตให้เข้าถึง', 'color: green; font-size: 14px; font-weight: bold;');
+          setNetLogs(prev => [...prev, `[INFO] Override สำเร็จ: เชื่อมต่อกับ ${ip}:${port}`, '[INFO] กำลังยืนยันตัวตน...']);
           setTimeout(() => setPhase('COOKIE'), 1500);
           return "Connection Established";
         } else {
-          console.error('[FAIL] Connection refused.');
+          console.error('[FAIL] การเชื่อมต่อถูกปฏิเสธ (Connection Refused)');
           setNetLogs(prev => [...prev, `[ERROR] Connection refused: ${ip}:${port}`]);
           return "Connection Refused";
         }
       };
       
       console.clear();
-      console.log('--- NOD-77 DEBUG CONSOLE ---');
-      console.log('To bypass the firewall, use the manual injection method:');
-      console.log('window.inject_packet("TARGET_IP", "TARGET_PORT")');
+      console.log('%c--- NOD-77 DEBUG CONSOLE ---', 'font-weight: bold; color: #00ff00;');
+      console.log('คำเตือน: การเชื่อมต่อผ่าน GUI ถูกบล็อกโดย Firewall');
+      console.log('นักพัฒนาได้เปิดใช้งานฟังก์ชัน Global API สำหรับการทดสอบเจาะระบบ');
+      console.log('โปรดตรวจสอบเอกสาร API ภายในเพื่อใช้งาน');
     }
   }, [phase]);
 
@@ -108,7 +110,7 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
     e.preventDefault();
     const rawCmd = input.trim();
     if (!rawCmd) return;
-    setLogs(prev => [...prev, `root@nod-77:~# ${rawCmd}`]);
+    setLogs(prev => [...prev, `${userName}@nod-77:~# ${rawCmd}`]);
     setInput('');
 
     const parts = rawCmd.split(' ');
@@ -149,7 +151,7 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
       }
     } else if (cmd === 'date') {
         addLog(`${new Date().toString()}`);
-    } else if (cmd === 'su' || rawCmd === 'su root' || rawCmd === 'sudo su' || (cmd === 'become' && arg1 === 'root')) {
+    } else if (cmd === 'su' || rawCmd === 'su root' || rawCmd === 'sudo su') {
       // switch user to root if authorized
       if (cookieStatus === 'UNLOCKED') {
         setUserName('root');
@@ -174,7 +176,7 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
              addLog('cat: No such file or directory');
         }
     } else if (cmd === 'help') {
-        addLog('Shell commands: ls -l, chown root [file], chmod 777 [file], cat [file], date');
+        addLog('Shell commands: ls -l, chown root [file], chmod 777 [file], cat [file], date, su root');
     } else {
         addLog(`${cmd}: command not found`);
     }
@@ -193,9 +195,9 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
             <div className="w-4 h-4 rounded-full bg-[#ffbd2e]"></div>
             <div className="w-4 h-4 rounded-full bg-[#27c93f]"></div>
           </div>
-          <span className="text-gray-400 text-lg font-medium ml-2">NOD-77 Secure Gateway Client v3.1</span>
+          <span className="text-gray-400 text-lg font-medium ml-2">NOD-77 ไคลเอนต์เกตเวย์นิรภัย v3.1</span>
         </div>
-        <div className="text-sm text-gray-500">Disconnected</div>
+        <div className="text-sm text-gray-500">สถานะ: ตัดการเชื่อมต่อ</div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -205,25 +207,25 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
              <div className="w-32 h-32 bg-[#333] rounded-full mx-auto mb-8 flex items-center justify-center shadow-inner">
                <span className="material-symbols-outlined text-7xl text-gray-500">lan</span>
              </div>
-             <h2 className="text-gray-200 font-bold text-2xl mb-4">Internal Lab Network</h2>
+             <h2 className="text-gray-200 font-bold text-2xl mb-4">เครือข่ายห้องปฏิบัติการภายใน</h2>
              <p className="text-red-400 text-lg font-medium flex items-center justify-center gap-3">
                <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
-               Connection Failed
+               การเชื่อมต่อล้มเหลว
              </p>
            </div>
 
            <div className="space-y-6 flex-1">
-             <div className="text-sm text-gray-500 uppercase tracking-wider font-bold">Connection Details</div>
+             <div className="text-sm text-gray-500 uppercase tracking-wider font-bold">รายละเอียดการเชื่อมต่อ</div>
              <div className="flex justify-between text-base text-gray-400 border-b border-[#333] pb-4">
-               <span>Target Host</span>
-               <span className="font-mono text-red-400">UNKNOWN</span>
+               <span>โฮสต์เป้าหมาย</span>
+               <span className="font-mono text-red-400">ไม่ทราบค่า</span>
              </div>
              <div className="flex justify-between text-base text-gray-400 border-b border-[#333] pb-4">
-               <span>Port</span>
+               <span>พอร์ต</span>
                <span className="font-mono text-red-400">N/A</span>
              </div>
              <div className="flex justify-between text-base text-gray-400 border-b border-[#333] pb-4">
-               <span>Protocol</span>
+               <span>โปรโตคอล</span>
                <span>Secure Socket Layer (SSL)</span>
              </div>
            </div>
@@ -244,15 +246,17 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
 
           <div className="bg-[#252526] p-8 rounded-xl border-l-8 border-yellow-600 text-lg">
             <div className="flex items-center gap-3 text-yellow-500 font-bold mb-4">
-              <span className="material-symbols-outlined text-2xl">build</span>
-              <span>Developer Troubleshooting</span>
+              <span className="material-symbols-outlined text-2xl">bug_report</span>
+              <span>บันทึกการแก้ไขปัญหา (Debug Log)</span>
             </div>
-            <p className="text-gray-400 mb-4">
-              การเชื่อมต่อถูกบล็อกโดยนโยบายfirewall โปรดใช้คอนโซลของเบราว์เซอร์เพื่อกำหนดค่าพารามิเตอร์เป้าหมายด้วยตนเอง
+            <div className="text-gray-400 mb-4 text-base space-y-2 font-mono bg-black/50 p-4 rounded">
+              <p className="text-red-400">Error Code: 0x8004005 (FIREWALL_BLOCK)</p>
+              <p>คำแนะนำ: ตรวจพบ API สำหรับนักพัฒนา (Exposed Global Function)</p>
+              <p className="text-blue-400">Signature: void inject_packet(string ip, string port)</p>
+            </div>
+            <p className="text-gray-500 text-sm italic">
+              * โปรดใช้ Console (F12) ในการเรียกใช้ฟังก์ชันตาม Signature ด้านบน
             </p>
-            <code className="block bg-black p-5 rounded-lg text-gray-300 font-mono text-base">
-              &gt; window.inject_packet("TARGET_IP", "PORT")
-            </code>
           </div>
         </div>
       </div>
@@ -286,39 +290,39 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
                   <span className="material-symbols-outlined text-5xl">science</span>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">NOD-77 RESEARCH LABORATORY</h1>
-                  <p className="text-base text-blue-200 uppercase tracking-widest mt-1">Internal Data Management System</p>
+                  <h1 className="text-3xl font-bold tracking-tight">ห้องปฏิบัติการวิจัย NOD-77</h1>
+                  <p className="text-base text-blue-200 uppercase tracking-widest mt-1">ระบบจัดการข้อมูลภายใน (Internal Data System)</p>
                 </div>
               </div>
               <div className="text-right bg-white/5 px-8 py-4 rounded-xl border border-white/10">
-                 <div className="text-sm font-medium opacity-80 uppercase tracking-wider">Session Status</div>
+                 <div className="text-sm font-medium opacity-80 uppercase tracking-wider">สถานะเซสชัน (Session Status)</div>
                  <div className={`text-2xl font-bold flex items-center justify-end gap-3 mt-1 ${cookieStatus === 'LOCKED' ? 'text-yellow-400' : 'text-green-400'}`}>
-                   {cookieStatus === 'LOCKED' ? 'Guest Visitor' : 'System Administrator'}
+                   {cookieStatus === 'LOCKED' ? 'ผู้เยี่ยมชม (Guest)' : 'ผู้ดูแลระบบ (Admin)'}
                    <span className="material-symbols-outlined text-2xl">{cookieStatus === 'LOCKED' ? 'lock' : 'verified_user'}</span>
                  </div>
               </div>
             </div>
           </header>
 
-          <div className="flex-1 p-6 flex gap-10 overflow-hidden">
+          <div className="flex-1 p-10 flex gap-10 overflow-hidden">
              {/* Sidebar */}
              <div className="w-80 space-y-6 shrink-0">
                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                 <div className="text-xs font-bold text-gray-400 uppercase mb-6 tracking-wider">Navigation</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-6 tracking-wider">เมนูนำทาง</div>
                  <ul className="space-y-6 text-gray-600 font-medium text-lg">
-                   <li className="flex items-center gap-4 text-[#003366] bg-blue-50 p-3 rounded-lg"><span className="material-symbols-outlined">dashboard</span> Dashboard</li>
-                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">folder_shared</span> Projects</li>
-                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">group</span> Team</li>
-                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">settings</span> Settings</li>
+                   <li className="flex items-center gap-4 text-[#003366] bg-blue-50 p-3 rounded-lg"><span className="material-symbols-outlined">dashboard</span> แดชบอร์ด</li>
+                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">folder_shared</span> โครงการ</li>
+                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">group</span> ทีมงาน</li>
+                   <li className="flex items-center gap-4 opacity-50"><span className="material-symbols-outlined">settings</span> ตั้งค่าระบบ</li>
                  </ul>
                </div>
 
-               <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-xl text-base text-yellow-800">
-                 <strong>System Notification:</strong><br/>
-                 Viewing as <span className="font-bold underline">Guest</span>. Features disabled.
-                 <div className="mt-4 pt-4 border-t border-yellow-200 text-sm text-gray-500 flex gap-2">
-                   <span className="material-symbols-outlined text-base">code</span>
-                   Dev Hint: Application &gt; Cookies
+               <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl text-base text-yellow-800">
+                 <strong>ประกาศจากระบบ:</strong><br/>
+                 คุณกำลังเข้าชมในฐานะ <span className="font-bold underline">Guest</span> ฟังก์ชันการจัดการไฟล์ระดับสูงถูกปิดใช้งาน
+                 <div className="mt-4 pt-4 border-t border-yellow-200 text-sm text-gray-500 flex flex-col gap-2">
+                   <span className="flex items-center gap-2 font-bold"><span className="material-symbols-outlined text-base">warning</span> คำแนะนำจากฝ่ายไอที:</span>
+                   <span>พบความผิดปกติของ Session Token ในฝั่งไคลเอนต์ (Client-Side Storage) กรุณาตรวจสอบค่าตัวแปรสิทธิ์ผู้ใช้</span>
                  </div>
                </div>
              </div>
@@ -327,24 +331,24 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
              <div className="flex-1 flex flex-col gap-8 overflow-hidden">
                 <div className="grid grid-cols-3 gap-8 shrink-0">
                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">System Status</div>
-                     <div className="text-green-600 font-bold text-xl flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-600"></span> Online</div>
+                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">สถานะระบบ</div>
+                     <div className="text-green-600 font-bold text-xl flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-600"></span> ออนไลน์</div>
                    </div>
                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">Access Level</div>
+                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">ระดับการเข้าถึง</div>
                      <div className={`${cookieStatus === 'LOCKED' ? 'text-red-500' : 'text-green-500'} font-bold text-xl`}>
-                       {cookieStatus === 'LOCKED' ? 'Restricted' : 'Full Control'}
+                       {cookieStatus === 'LOCKED' ? 'จำกัดสิทธิ์ (อ่านอย่างเดียว)' : 'ควบคุมเต็มรูปแบบ'}
                      </div>
                    </div>
                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">Secure Files</div>
-                     <div className="text-gray-800 font-bold text-xl">1 Protected File</div>
+                     <div className="text-gray-500 text-sm uppercase font-bold mb-3">ไฟล์นิรภัย</div>
+                     <div className="text-gray-800 font-bold text-xl">1 ไฟล์ถูกป้องกัน</div>
                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col relative overflow-hidden">
                    <div className="px-10 py-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                     <h3 className="font-bold text-gray-700 text-xl">Recent Documents</h3>
+                     <h3 className="font-bold text-gray-700 text-xl">เอกสารล่าสุด</h3>
                      {cookieStatus === 'UNLOCKED' && <span className="bg-green-100 text-green-800 text-sm px-4 py-2 rounded-full font-bold">Admin Mode</span>}
                    </div>
                    
@@ -352,28 +356,28 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
                      <table className="w-full text-base text-left">
                        <thead className="text-gray-500 bg-gray-50 border-b border-gray-200 sticky top-0">
                          <tr>
-                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">Name</th>
-                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">Owner</th>
-                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">Date</th>
-                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">Action</th>
+                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">ชื่อไฟล์</th>
+                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">เจ้าของ</th>
+                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">วันที่</th>
+                           <th className="px-10 py-5 font-medium uppercase text-xs tracking-wider">การกระทำ</th>
                          </tr>
                        </thead>
                        <tbody className="divide-y divide-gray-100">
                           <tr className="hover:bg-gray-50">
-                             <td className="px-10 py-6 flex items-center gap-4 text-gray-700"><span className="material-symbols-outlined text-blue-400 text-2xl">description</span> safety_protocol_v2.pdf</td>
+                             <td className="px-10 py-6 flex items-center gap-4 text-gray-700"><span className="material-symbols-outlined text-blue-400 text-xl">description</span> safety_protocol_v2.pdf</td>
                              <td className="px-10 py-6 text-gray-500">Staff</td>
-                             <td className="px-10 py-6 text-gray-400">Jan 10, 2026</td>
-                             <td className="px-10 py-6"><button className="text-blue-600 hover:underline">Download</button></td>
+                             <td className="px-10 py-6 text-gray-400">10 ม.ค. 2569</td>
+                             <td className="px-10 py-6"><button className="text-blue-600 hover:underline">ดาวน์โหลด</button></td>
                           </tr>
                           <tr className="bg-red-50/30 hover:bg-red-50/60">
-                             <td className="px-10 py-6 flex items-center gap-4 font-bold text-red-900"><span className="material-symbols-outlined text-red-500 text-2xl">lock</span> ritual_plan_final.txt</td>
+                             <td className="px-10 py-6 flex items-center gap-4 font-bold text-red-900"><span className="material-symbols-outlined text-red-500 text-xl">lock</span> ritual_plan_final.txt</td>
                              <td className="px-10 py-6 text-gray-600">root</td>
-                             <td className="px-10 py-6 text-gray-400">Jan 14, 2026</td>
+                             <td className="px-10 py-6 text-gray-400">14 ม.ค. 2569</td>
                              <td className="px-10 py-6">
                                {cookieStatus === 'LOCKED' ? (
-                                 <span className="text-gray-400 italic cursor-not-allowed flex items-center gap-2"><span className="material-symbols-outlined text-lg">block</span> Access Denied</span>
+                                 <span className="text-gray-400 italic cursor-not-allowed flex items-center gap-2"><span className="material-symbols-outlined text-base">block</span> ปฏิเสธการเข้าถึง</span>
                                ) : (
-                                 <span className="text-green-600 font-bold flex items-center gap-2 animate-pulse"><span className="material-symbols-outlined text-lg">key</span> Unlockable via Shell</span>
+                                 <span className="text-green-600 font-bold flex items-center gap-2 animate-pulse"><span className="material-symbols-outlined text-base">key</span> ปลดล็อกผ่าน Shell</span>
                                )}
                              </td>
                           </tr>
@@ -393,17 +397,17 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
          <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
            <span className="material-symbols-outlined text-6xl">admin_panel_settings</span>
          </div>
-         <h3 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tight">Admin Session Verified</h3>
+         <h3 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tight">ยืนยันสิทธิ์ Admin เรียบร้อย</h3>
          <div className="w-16 h-1 bg-green-500 mx-auto mb-6 rounded-full"></div>
          <p className="text-gray-600 mb-10 leading-relaxed text-lg">
-           Access to the root file system is restricted on this web interface.<br/>
-           You must establish a <strong>secure shell connection</strong> to proceed with file operations.
+           การเข้าถึงไฟล์ระบบระดับ Root ถูกจำกัดบนหน้าเว็บอินเทอร์เฟซนี้<br/>
+           คุณต้องสร้างการเชื่อมต่อ <strong>Secure Shell (WebShell)</strong> เพื่อจัดการไฟล์ขั้นสูง
          </p>
          <button 
            onClick={() => setPhase('WEBSHELL_INFO')}
            className="bg-[#003366] text-white px-10 py-5 rounded-xl font-bold text-lg w-full hover:bg-blue-900 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
          >
-           Access Remote Console
+           เข้าสู่คอนโซลระยะไกล
            <span className="material-symbols-outlined text-2xl">terminal</span>
          </button>
       </div>
@@ -420,17 +424,17 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
           </div>
           
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-wider">Server Connection Manager</h2>
+            <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-wider">ตัวจัดการการเชื่อมต่อเซิร์ฟเวอร์</h2>
             <p className="text-gray-400 text-sm">NOD-77 Secure Shell Protocol (SSH) v2.0</p>
           </div>
 
           <div className="bg-[#252526] text-left p-4 rounded-2xl border-l-8 border-blue-500 text-sm space-y-3 shadow-inner break-words">
-            <h3 className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-2">Protocol Information</h3>
+            <h3 className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-2">ข้อมูลโปรโตคอล</h3>
             <p className="text-gray-300 leading-snug">
-              <strong className="text-white">Web Shell Deployment:</strong> การเข้าถึงเว็บแบบมาตรฐานไม่เพียงพอสำหรับการจัดการไฟล์ระดับราก "webshell" สร้างสะพานเชื่อมโดยตรงระหว่างเบราว์เซอร์นี้กับเคอร์เนลของเซิร์ฟเวอร์
+              <strong className="text-white">การติดตั้ง Web Shell:</strong> เนื่องจากการเข้าถึงผ่านหน้าเว็บปกติไม่เพียงพอสำหรับการจัดการไฟล์ระดับ Root ระบบจะทำการสร้างสะพานเชื่อม (Bridge) ระหว่างเบราว์เซอร์นี้กับ Kernel ของเซิร์ฟเวอร์โดยตรง
             </p>
             <p className="text-gray-400 italic text-xs border-t border-gray-700 pt-3 mt-2">
-              Warning: Initiating this connection grants direct command-line execution privileges.
+              คำเตือน: การเริ่มต้นการเชื่อมต่อนี้จะมอบสิทธิ์การสั่งงานผ่าน Command Line โดยตรง
             </p>
           </div>
 
@@ -439,12 +443,12 @@ const AuthzView: React.FC<AuthzViewProps> = ({ status, onComplete, onRequestHint
               onClick={startInstallation}
               className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-500 transition-all w-full uppercase tracking-widest shadow-md"
             >
-              Initialize Connection
+              เริ่มต้นการเชื่อมต่อ
             </button>
           ) : (
             <div className="w-full space-y-3">
                <div className="flex justify-between text-xs text-gray-400 font-bold tracking-wider">
-                 <span>ESTABLISHING SECURE TUNNEL...</span>
+                 <span>กำลังสร้างอุโมงค์นิรภัย...</span>
                  <span>{installProgress}%</span>
                </div>
                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
