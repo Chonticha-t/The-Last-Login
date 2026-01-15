@@ -47,7 +47,7 @@ export const CORPSES_DATA = [
         description: "ถอดรหัส RSA เพื่อเข้าถึงผลตรวจสารพิษ. (ให้ p = Promethium, q = Iodine, e = 17)",
         challengeData: {
             ciphertext: "ถอดรหัส RSA เพื่อเข้าถึงผลตรวจสารพิษ จาก d ≡ e^(-1) (mod φ(n)) \nโดย φ(n) = (p-1)(q-1)",
-            hint: "ให้ p = Nitrogen , q = Aluminium , e = Bromine )",
+            hint: "ให้ p = Boron , q = Sodium  , e = Chlorine  )",
             solution: "33"
         },
         autopsyFindings: [
