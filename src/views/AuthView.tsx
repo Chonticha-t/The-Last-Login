@@ -356,7 +356,16 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
   );
 
   const renderUSB = () => (
-    <div className="w-full h-full bg-black text-gray-200 font-mono flex flex-col items-center justify-center p-6">
+    <div className="w-full h-full bg-black text-gray-200 font-mono flex flex-col items-center justify-center p-6 relative">
+        {/* Back Button */}
+        <button 
+          onClick={() => setActiveDevice('NONE')} 
+          className="absolute top-6 right-6 p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all flex items-center gap-2 border border-gray-700"
+        >
+          <X className="w-4 h-4" />
+          <span className="text-xs font-mono">ESC</span>
+        </button>
+
         {usbStep === 'INSERT' && (
             <div className="text-center py-12">
                 <div className="animate-bounce mb-8">
