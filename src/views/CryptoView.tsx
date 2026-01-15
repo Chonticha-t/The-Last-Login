@@ -3,6 +3,7 @@ import type { CaseStatus, TerminalLine } from '../types';
 import StageHeader from '../components/StageHeader';
 import Terminal from '../components/Terminal';
 import { CORPSES_DATA } from '../data/corpses';
+import { md5 } from '../utils/md5';
 
 interface CryptoViewProps {
   status: CaseStatus;
@@ -21,6 +22,7 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
   const [selectedCorpseId, setSelectedCorpseId] = useState<number>(0);
   const [unlockedStatus, setUnlockedStatus] = useState<boolean[]>([false, false, false, false]);
   const [challengeInput, setChallengeInput] = useState('');
+  const [hashToolInput, setHashToolInput] = useState('');
 
   const [terminalLogs, setTerminalLogs] = useState<TerminalLine[]>([
     { timestamp: 'SYSTEM', type: 'WARN', content: 'RITUAL INTERFACE: LOADED.' },
@@ -262,6 +264,65 @@ const CryptoView: React.FC<CryptoViewProps> = ({ status, onComplete, onRequestHi
                 </div>
               )}
               {/* --- จบส่วนเครื่องคิดเลข --- */}
+              
+              {/* --- ส่วนที่เพิ่ม: Hacker's Hash Tool (เครื่องคิดเลข Hash) --- */}
+              {selectedCorpseId === 2 && (
+                <div className="mt-8 bg-black/80 border border-red-900/50 p-6 rounded-lg font-mono shadow-2xl">
+                  <div className="flex items-center gap-2 mb-4 border-b border-red-900/30 pb-2">
+                    <MaterialIcon icon="calendar_month" className="text-red-600 text-sm" />
+                    <span className="text-red-500 text-xl font-black uppercase tracking-[0.2em]">CALENDAR_HASH_VERIFY</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-4">
+                     {/* Reference Hash Display */}
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider">TARGET REFERENCE HASH</label>
+                        <div className="bg-red-900/20 border border-red-900/50 p-2 text-red-500 font-mono text-xs break-all">
+                            735b90b4568125ed6c3f678819b6e058
+                        </div>
+                     </div>
+
+                     {/* Display Current Input */}
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider">YOUR INPUT DATE VALUE</label>
+                        <div className="bg-black border border-zinc-700 p-3 text-white font-mono text-xl tracking-widest min-h-[50px] flex items-center justify-between">
+                            <span>{hashToolInput || "_"}</span>
+                            {hashToolInput && <button onClick={() => setHashToolInput('')} className="text-[10px] text-red-500 hover:text-red-400">[CLEAR]</button>}
+                        </div>
+                     </div>
+
+                     {/* Numpad Grid */}
+                     <div className="grid grid-cols-3 gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                           <button
+                             key={num}
+                             onClick={() => setHashToolInput(prev => prev + num)}
+                             className="bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 hover:border-red-500 text-white font-mono text-lg py-2 transition-all active:scale-95"
+                           >
+                              {num}
+                           </button>
+                        ))}
+                     </div>
+
+                     {/* Result Hash */}
+                     <div className="flex flex-col gap-1 pt-2 border-t border-zinc-900">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider">YOUR CALCULATED HASH</label>
+                        <div className={`p-2 font-mono text-xs break-all border transition-colors ${
+                            hashToolInput && md5(hashToolInput) === '735b90b4568125ed6c3f678819b6e058'
+                            ? 'bg-green-900/20 border-green-500 text-green-500 animate-pulse'
+                            : 'bg-black border-zinc-800 text-zinc-500'
+                        }`}>
+                            {hashToolInput ? md5(hashToolInput) : 'waiting_for_input...'}
+                        </div>
+                        {hashToolInput && md5(hashToolInput) === '735b90b4568125ed6c3f678819b6e058' && (
+                             <div className="text-center text-green-500 font-bold text-sm mt-2 font-mono tracking-widest">
+                                MATCH CONFIRMED (ตรงกด 67)
+                             </div>
+                        )}
+                     </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-zinc-900/10 border border-red-900/20 p-10 rounded-sm">
