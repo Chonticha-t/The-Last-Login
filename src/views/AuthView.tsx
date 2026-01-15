@@ -10,7 +10,370 @@ import type { CaseStatus } from '../types';
 
 // --- Types ---
 type DeviceType = 'NONE' | 'PHONE1' | 'PC' | 'PHONE2' | 'USB';
-type FingerprintFile = { id: string; name: string; src: string; isMatch: boolean };
+
+// --- PRISM MECHANICS COMPONENT ---
+// Icons for prism puzzle
+const PRISM_ICONS = {
+  SOURCE: "⦿",
+  RECEIVER: "◎",
+  BLOCK: "█",
+  TOXIN: "☣",
+  UP: "△",
+  DOWN: "▽",
+  SPLIT_UP: "◬",
+  SPLIT_DOWN: "⟆",
+};
+
+// Level Configuration
+const PRISM_CASES = {
+  NORTH: {
+    id: 'NORTH',
+    title: 'CASE 01: THE BURIED SIGNAL',
+    element: 'EARTH (ดิน)',
+    autopsy: [
+      "สภาพศพ: ฝังดินลึก, สัญลักษณ์ ∇ มีขีด",
+      "ภายใน: ดินอัดแน่นในปอด (Blockage)",
+      "เป้าหมาย: เจาะดินลงไปหาตัวรับที่ก้นหลุม"
+    ],
+    gridSize: { r: 6, c: 6 },
+    source: { r: 1, c: 0, dir: 'RIGHT' },
+    receiver: { r: 5, c: 4, type: 'NORMAL' },
+    obstacles: [
+      { r: 2, c: 2, type: 'BLOCK' }, { r: 2, c: 3, type: 'BLOCK' }, { r: 2, c: 4, type: 'BLOCK' },
+      { r: 3, c: 1, type: 'BLOCK' }, { r: 3, c: 2, type: 'BLOCK' }, { r: 3, c: 5, type: 'BLOCK' },
+      { r: 4, c: 2, type: 'BLOCK' }, { r: 4, c: 3, type: 'BLOCK' }
+    ],
+    inventory: { split_down: 1 }
+  },
+  EAST: {
+    id: 'EAST',
+    title: 'CASE 02: TOXIC REFRACTION',
+    element: 'WATER (น้ำ)',
+    autopsy: [
+      "สภาพศพ: ลอยคว่ำหน้า, สัญลักษณ์ ∇",
+      "พิษวิทยา: พบสารพิษในเลือด (Require Purple)",
+      "เป้าหมาย: ผ่านพิษแล้วหักเหแสงลงน้ำ"
+    ],
+    gridSize: { r: 6, c: 6 },
+    source: { r: 2, c: 0, dir: 'RIGHT' },
+    receiver: { r: 5, c: 5, type: 'REQUIRES_PURPLE' },
+    obstacles: [
+      { r: 2, c: 3, type: 'TOXIN' },
+      { r: 4, c: 1, type: 'BLOCK' }, { r: 4, c: 2, type: 'BLOCK' }
+    ],
+    inventory: { down: 1 }
+  },
+  SOUTH: {
+    id: 'SOUTH',
+    title: 'CASE 03: THE HANGING PATH',
+    element: 'WIND (ลม)',
+    autopsy: [
+      "สภาพศพ: แขวนคอสูง, สัญลักษณ์ △ มีขีด",
+      "ข้อสังเกต: รอยเชือกเฉียงขึ้น (Tension)",
+      "เป้าหมาย: ส่งสัญญาณขึ้นที่สูง"
+    ],
+    gridSize: { r: 8, c: 6 },
+    source: { r: 7, c: 0, dir: 'RIGHT' },
+    receiver: { r: 0, c: 4, type: 'NORMAL' },
+    obstacles: [
+      { r: 3, c: 2, type: 'BLOCK' }, { r: 4, c: 3, type: 'BLOCK' },
+      { r: 1, c: 3, type: 'BLOCK' }
+    ],
+    inventory: { split_up: 1 }
+  }
+};
+
+const PrismMechanics = ({ onUnlock }: { onUnlock: () => void }) => {
+  const [currentCase, setCurrentCase] = useState(PRISM_CASES.NORTH);
+  const [grid, setGrid] = useState<any[][]>([]);
+  const [inventory, setInventory] = useState<Record<string, number>>({});
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [beams, setBeams] = useState<any[]>([]);
+  const [status, setStatus] = useState("IDLE");
+  const [logMessage, setLogMessage] = useState("READY FOR INPUT");
+
+  useEffect(() => {
+    resetLevel();
+  }, [currentCase]);
+
+  const resetLevel = () => {
+    const { gridSize, obstacles, inventory: levelInv } = currentCase;
+    
+    let newGrid = Array(gridSize.r).fill(null).map(() => Array(gridSize.c).fill(null));
+    
+    obstacles.forEach((o: any) => {
+      newGrid[o.r][o.c] = { type: o.type };
+    });
+
+    setGrid(newGrid);
+    setInventory({ ...levelInv });
+    setBeams([]);
+    setStatus("IDLE");
+    setSelectedTool(null);
+    setLogMessage("SYSTEM RESET. AWAITING CONFIGURATION.");
+  };
+
+  const handleCellClick = (r: number, c: number) => {
+    if (status === "ACTIVE" || status === "SUCCESS") return;
+    
+    if (selectedTool && !grid[r][c]) {
+      if (inventory[selectedTool] > 0) {
+        const newGrid = grid.map(row => [...row]);
+        newGrid[r][c] = { type: 'PRISM', variant: selectedTool };
+        setGrid(newGrid);
+        setInventory(prev => ({ ...prev, [selectedTool]: prev[selectedTool] - 1 }));
+        setLogMessage(`PLACED ${selectedTool.toUpperCase()} PRISM AT [${r},${c}]`);
+        setSelectedTool(null);
+      }
+    } 
+    else if (grid[r][c]?.type === 'PRISM') {
+      const removedType = grid[r][c].variant;
+      const newGrid = grid.map(row => [...row]);
+      newGrid[r][c] = null;
+      setGrid(newGrid);
+      setInventory(prev => ({ ...prev, [removedType]: prev[removedType] + 1 }));
+      setLogMessage(`REMOVED COMPONENT FROM [${r},${c}]`);
+    }
+  };
+
+  const activateCircuit = () => {
+    setStatus("ACTIVE");
+    setLogMessage("POWERING UP LASER ARRAY...");
+    
+    const { source, receiver, gridSize } = currentCase;
+    let activeBeams: any[] = [];
+    let beamHistory: any[] = [];
+    let success = false;
+    let failReason = "";
+
+    activeBeams.push({ r: source.r, c: source.c, dr: 0, dc: 1, color: 'GREEN' });
+
+    for (let step = 0; step < 50; step++) {
+      if (activeBeams.length === 0) break;
+
+      let nextBeams: any[] = [];
+
+      for (let beam of activeBeams) {
+        beamHistory.push({ ...beam });
+
+        const nextR = beam.r + beam.dr;
+        const nextC = beam.c + beam.dc;
+
+        if (nextR < 0 || nextR >= gridSize.r || nextC < 0 || nextC >= gridSize.c) {
+           continue;
+        }
+
+        const cell = grid[nextR][nextC];
+        let newBeamsFromHere: any[] = [];
+        let hitBlock = false;
+
+        if (nextR === receiver.r && nextC === receiver.c) {
+          if (receiver.type === 'REQUIRES_PURPLE' && beam.color !== 'PURPLE') {
+            failReason = "ERROR: TOXIN SIGNATURE MISSING";
+          } else {
+            success = true;
+          }
+          continue; 
+        }
+
+        if (cell) {
+          if (cell.type === 'BLOCK') {
+            hitBlock = true;
+          } 
+          else if (cell.type === 'TOXIN') {
+            newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: 'PURPLE' });
+          }
+          else if (cell.type === 'PRISM') {
+            const variant = cell.variant;
+            
+            if (variant === 'up') {
+              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: -1, dc: 0, color: beam.color });
+              else if (beam.dr === 1) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 0, dc: 1, color: beam.color });
+            }
+            else if (variant === 'down') {
+              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 1, dc: 0, color: beam.color });
+              else if (beam.dr === -1) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 0, dc: 1, color: beam.color });
+            }
+            else if (variant === 'split_up') {
+              newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
+              if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: -1, dc: 0, color: beam.color });
+            }
+            else if (variant === 'split_down') {
+               newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
+               if (beam.dc !== 0) newBeamsFromHere.push({ r: nextR, c: nextC, dr: 1, dc: 0, color: beam.color });
+            }
+          }
+        } else {
+          newBeamsFromHere.push({ r: nextR, c: nextC, dr: beam.dr, dc: beam.dc, color: beam.color });
+        }
+
+        if (!hitBlock) {
+          nextBeams.push(...newBeamsFromHere);
+        }
+      }
+      activeBeams = nextBeams;
+    }
+
+    setBeams(beamHistory);
+
+    if (success) {
+      setStatus("SUCCESS");
+      setLogMessage("CIRCUIT COMPLETED. AUTHENTICATING...");
+      setTimeout(onUnlock, 1500);
+    } else {
+      setStatus("FAIL");
+      setLogMessage(failReason || "SIGNAL LOST. ADJUST PRISMS.");
+    }
+  };
+
+  return (
+    <div className="w-full h-full bg-black text-green-500 font-mono p-4 flex flex-col items-center justify-center select-none overflow-y-auto">
+      
+      {/* HEADER: CASE FILE SWITCHER */}
+      <div className="w-full max-w-4xl flex gap-2 mb-4 overflow-x-auto pb-2">
+        {Object.values(PRISM_CASES).map((c: any) => (
+          <button
+            key={c.id}
+            onClick={() => setCurrentCase(c)}
+            className={`px-4 py-2 border rounded text-xs whitespace-nowrap transition-all
+              ${currentCase.id === c.id 
+                ? 'bg-green-900 border-green-500 text-white' 
+                : 'bg-gray-900 border-gray-700 text-gray-500 hover:border-green-800'}`}
+          >
+            {c.title}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl">
+        
+        {/* LEFT: AUTOPSY REPORT */}
+        <div className="w-full md:w-1/3 bg-gray-900/50 border border-green-800 p-4 rounded-lg h-fit">
+          <h3 className="text-xl font-bold text-white mb-2 border-b border-green-800 pb-2">
+            AUTOPSY: {currentCase.element}
+          </h3>
+          <ul className="text-sm space-y-3 text-green-300/80">
+            {currentCase.autopsy.map((line: string, i: number) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-green-600">➤</span> {line}
+              </li>
+            ))}
+          </ul>
+          
+          {/* LOG CONSOLE */}
+          <div className="mt-6 p-2 bg-black border border-green-900 font-mono text-xs h-24 overflow-y-auto">
+            <p className="text-gray-500">System Log:</p>
+            <p className={status === "FAIL" ? "text-red-500" : "text-green-400"}>
+              {">"} {logMessage}
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT: CIRCUIT BOARD */}
+        <div className="w-full md:w-2/3 flex flex-col items-center">
+          
+          {/* GRID */}
+          <div className="relative bg-black border-4 border-gray-800 p-2 rounded-xl shadow-[0_0_30px_rgba(0,255,0,0.1)]">
+            <div 
+              className="grid gap-1"
+              style={{ gridTemplateColumns: `repeat(${currentCase.gridSize.c}, 50px)` }}
+            >
+              {grid.map((row: any, r: number) => (
+                row.map((cell: any, c: number) => {
+                  const isSource = r === currentCase.source.r && c === currentCase.source.c;
+                  const isReceiver = r === currentCase.receiver.r && c === currentCase.receiver.c;
+                  
+                  const activeBeam = beams.find((b: any) => b.r === r && b.c === c);
+                  
+                  return (
+                    <div 
+                      key={`${r}-${c}`}
+                      onClick={() => handleCellClick(r, c)}
+                      className={`
+                        w-[50px] h-[50px] border border-gray-900 flex items-center justify-center text-xl relative transition-all cursor-pointer
+                        ${cell?.type === 'BLOCK' ? 'bg-amber-900/40 border-amber-800' : ''}
+                        ${cell?.type === 'TOXIN' ? 'bg-purple-900/40 border-purple-800' : ''}
+                        ${isSource ? 'bg-green-900/20' : ''}
+                        ${isReceiver ? 'bg-blue-900/20' : ''}
+                        ${activeBeam ? 'shadow-[inset_0_0_10px_rgba(0,255,0,0.2)]' : ''}
+                      `}
+                    >
+                      {isSource && <span className="text-green-500 text-2xl animate-pulse">{PRISM_ICONS.SOURCE}</span>}
+                      {isReceiver && <span className={`text-2xl ${status==='SUCCESS'?'text-white animate-bounce':(currentCase.receiver.type==='REQUIRES_PURPLE'?'text-purple-400':'text-blue-400')}`}>{PRISM_ICONS.RECEIVER}</span>}
+                      {cell?.type === 'BLOCK' && <span className="text-amber-700 text-sm">▓</span>}
+                      {cell?.type === 'TOXIN' && <span className="text-purple-500 animate-pulse">{PRISM_ICONS.TOXIN}</span>}
+                      
+                      {cell?.type === 'PRISM' && (
+                        <div className="text-yellow-400 text-2xl font-bold drop-shadow-[0_0_5px_yellow]">
+                          {cell.variant === 'up' && PRISM_ICONS.UP}
+                          {cell.variant === 'down' && PRISM_ICONS.DOWN}
+                          {cell.variant === 'split_up' && PRISM_ICONS.SPLIT_UP}
+                          {cell.variant === 'split_down' && PRISM_ICONS.SPLIT_DOWN}
+                        </div>
+                      )}
+
+                      {activeBeam && (
+                        <div className={`absolute w-2 h-2 rounded-full z-10
+                          ${activeBeam.color === 'PURPLE' ? 'bg-purple-400 shadow-[0_0_8px_purple]' : 'bg-green-400 shadow-[0_0_8px_green]'}
+                        `}></div>
+                      )}
+                    </div>
+                  );
+                })
+              ))}
+            </div>
+          </div>
+
+          {/* INVENTORY TOOLBAR */}
+          <div className="mt-6 flex gap-4 flex-wrap justify-center">
+            <div className="flex gap-2 p-2 bg-gray-800 rounded-lg border border-gray-700">
+              {Object.entries(inventory).map(([key, count]) => (
+                <button
+                  key={key}
+                  disabled={count <= 0}
+                  onClick={() => setSelectedTool(key)}
+                  className={`
+                    w-16 h-16 flex flex-col items-center justify-center rounded border-2 transition-all
+                    ${selectedTool === key 
+                      ? 'border-yellow-400 bg-yellow-900/20 text-yellow-400' 
+                      : count > 0 
+                        ? 'border-gray-600 bg-black text-gray-400 hover:border-gray-400'
+                        : 'border-gray-800 bg-gray-900 text-gray-700 cursor-not-allowed'}
+                  `}
+                >
+                  <span className="text-2xl">
+                    {key === 'up' && PRISM_ICONS.UP}
+                    {key === 'down' && PRISM_ICONS.DOWN}
+                    {key === 'split_up' && PRISM_ICONS.SPLIT_UP}
+                    {key === 'split_down' && PRISM_ICONS.SPLIT_DOWN}
+                  </span>
+                  <span className="text-[10px] mt-1">x{count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={activateCircuit}
+                disabled={status === "ACTIVE" || status === "SUCCESS"}
+                className="h-full px-6 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 text-white font-bold rounded border border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.3)]"
+              >
+                {status === "ACTIVE" ? "PROCESSING..." : "ACTIVATE"}
+              </button>
+              <button 
+                onClick={resetLevel}
+                className="px-6 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs border border-red-900 rounded"
+              >
+                RESET SYSTEM
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Ritual Cipher OTP Puzzle (Phone 2 Gate) ---
 const RitualCipherOTP = ({ onUnlock }: { onUnlock: () => void }) => {
@@ -151,225 +514,7 @@ const RitualCipherOTP = ({ onUnlock }: { onUnlock: () => void }) => {
   );
 };
 
-// --- Parallax Lock (USB Gate) ---
-const ParallaxLock = ({ onUnlock }: { onUnlock: () => void }) => {
-  const [orientation, setOrientation] = useState({ alpha: 0, beta: 0 });
-  const [permissionGranted, setPermissionGranted] = useState(false);
-  const [step, setStep] = useState(0);
-  const [signalStrength, setSignalStrength] = useState(0); // 0-100%
-  const [isHolding, setIsHolding] = useState(false); // ต้องกดค้างเพื่อจูน
-
-  // โจทย์: North(Invert), East(Invert), South(Normal)
-  const PHASES = [
-    { 
-      label: "TARGET: NORTH SPIRIT", 
-      clueSymbol: "▼", // Inverted
-      targetDir: [160, 200], 
-      targetTilt: "DOWN"
-    },
-    { 
-      label: "TARGET: EAST SPIRIT", 
-      clueSymbol: "▼", // Inverted
-      targetDir: [250, 290], 
-      targetTilt: "DOWN"
-    },
-    { 
-      label: "TARGET: SOUTH SPIRIT", 
-      clueSymbol: "▲", // Upright
-      targetDir: [160, 200], 
-      targetTilt: "UP"
-    }
-  ];
-
-  const requestAccess = () => {
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission()
-        .then((response: string) => {
-          if (response === 'granted') {
-            setPermissionGranted(true);
-            window.addEventListener('deviceorientation', handleOrientation);
-          } else { alert("Permission denied"); }
-        }).catch(console.error);
-    } else {
-      setPermissionGranted(true);
-      window.addEventListener('deviceorientation', handleOrientation);
-    }
-  };
-
-  const handleOrientation = (e: DeviceOrientationEvent) => {
-    let alpha = (e as any).webkitCompassHeading || e.alpha || 0;
-    let beta = e.beta || 0;
-    setOrientation({ alpha: alpha, beta: beta });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!permissionGranted || step >= 3) return;
-    
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    
-    const deltaX = e.clientX - centerX;
-    const deltaY = e.clientY - centerY;
-    
-    setOrientation({
-      alpha: (deltaX / window.innerWidth) * 360,
-      beta: (deltaY / window.innerHeight) * 180 - 90
-    });
-  };
-
-  useEffect(() => {
-    if (step >= 3) return;
-
-    const target = PHASES[step];
-    const { alpha, beta } = orientation;
-
-    const targetCenter = (target.targetDir[0] + target.targetDir[1]) / 2;
-    let diff = Math.abs(alpha - targetCenter);
-    if (diff > 180) diff = 360 - diff;
-    
-    let dirScore = Math.max(0, 100 - (diff * 2.5)); 
-
-    let tiltScore = 0;
-    if (target.targetTilt === "DOWN") {
-       if (beta < 40 && beta > -90) tiltScore = 100;
-       else tiltScore = 0;
-    } else {
-       if (beta > 50) tiltScore = 100;
-       else tiltScore = 0;
-    }
-
-    const totalSignal = (dirScore + tiltScore) / 2;
-    setSignalStrength(prev => prev + (totalSignal - prev) * 0.1);
-
-  }, [orientation, step]);
-
-  useEffect(() => {
-    if (step >= 3) return;
-    
-    let timer: ReturnType<typeof setTimeout>;
-    if (isHolding && signalStrength > 90) {
-      timer = setTimeout(() => {
-        if (navigator.vibrate) navigator.vibrate(500);
-        setStep(prev => prev + 1);
-        setIsHolding(false);
-      }, 2000);
-    }
-    return () => clearTimeout(timer);
-  }, [isHolding, signalStrength, step]);
-
-  useEffect(() => {
-    if (step === 3) {
-      setTimeout(() => {
-        onUnlock();
-      }, 500);
-    }
-  }, [step, onUnlock]);
-
-  return (
-    <div className="min-h-screen bg-black text-red-600 font-mono flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
-      
-      <div className="absolute inset-0 opacity-10 pointer-events-none" 
-           style={{backgroundImage: 'url("https://www.transparenttextures.com/patterns/stardust.png")'}}>
-      </div>
-
-      {!permissionGranted ? (
-        <div className="z-10 text-center max-w-sm">
-          <h1 className="text-3xl mb-2 text-red-500 font-bold tracking-widest">PARALLAX</h1>
-          <p className="mb-6 text-gray-500 text-xs">
-            WARNING: Spirit manifestations may distort magnetic fields.<br/>
-            Observe the Geometry. Calculate the Inverse.
-          </p>
-          <button onClick={requestAccess} className="px-8 py-3 bg-red-900/20 border border-red-600 text-red-500 rounded hover:bg-red-900/40">
-            INITIATE SENSORS
-          </button>
-          
-          {/* Skip Button for PC without sensors */}
-          <div className="mt-4 pt-4 border-t border-red-900/30">
-            <p className="text-gray-600 text-[10px] mb-2">No device sensors detected?</p>
-            <button 
-              onClick={() => {
-                setStep(3);
-                setTimeout(onUnlock, 500);
-              }}
-              className="px-6 py-2 bg-gray-900/60 border border-gray-600 text-gray-400 rounded hover:bg-gray-900/80 text-xs uppercase tracking-wider transition-all"
-            >
-              Skip Puzzle (Demo Mode)
-            </button>
-          </div>
-        </div>
-      ) : (
-        step < 3 ? (
-          <div className="z-10 w-full max-w-sm flex flex-col items-center">
-            
-            <div className="w-full border-b border-red-900 pb-2 mb-8 flex justify-between items-end">
-                <div>
-                    <div className="text-xs text-gray-500">CURRENT SIGNAL</div>
-                    <div className="text-xl font-bold text-red-500">{PHASES[step].label}</div>
-                </div>
-                <div className="text-right">
-                    <div className="text-xs text-gray-500">GEOMETRY</div>
-                    <div className="text-4xl text-white font-bold leading-none">{PHASES[step].clueSymbol}</div>
-                </div>
-            </div>
-
-            <div className="relative w-64 h-64 rounded-full border-2 border-red-900 bg-black flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
-                <div className="absolute w-[80%] h-[80%] border border-red-900/50 rounded-full"></div>
-                <div className="absolute w-[60%] h-[60%] border border-red-900/30 rounded-full"></div>
-                
-                <div className="absolute w-full h-[1px] bg-red-900/50 top-1/2"></div>
-                <div className="absolute h-full w-[1px] bg-red-900/50 left-1/2"></div>
-
-                <div 
-                   className={`rounded-full bg-red-600 blur-xl transition-all duration-300 opacity-80`}
-                   style={{ 
-                       width: `${signalStrength}%`, 
-                       height: `${signalStrength}%`,
-                       boxShadow: `0 0 ${signalStrength}px red`
-                   }}
-                ></div>
-                
-                <div className="absolute z-10 text-xs font-bold text-black mix-blend-screen">
-                    {Math.round(signalStrength)}%
-                </div>
-            </div>
-
-            <div className="w-full text-center">
-                <p className="text-xs text-gray-500 mb-2 h-4">
-                   {signalStrength > 80 ? "SIGNAL LOCKED! HOLD TO SYNC..." : "SEARCHING FOR RESONANCE..."}
-                </p>
-                <button
-                    onMouseDown={() => setIsHolding(true)}
-                    onMouseUp={() => setIsHolding(false)}
-                    onTouchStart={() => setIsHolding(true)}
-                    onTouchEnd={() => setIsHolding(false)}
-                    disabled={signalStrength < 50}
-                    className={`w-24 h-24 rounded-full border-4 transition-all duration-200 flex items-center justify-center
-                        ${isHolding 
-                            ? 'scale-90 bg-red-600 border-red-400 text-black shadow-[0_0_50px_red]' 
-                            : signalStrength > 50 
-                                ? 'bg-red-900/20 border-red-600 text-red-500 animate-pulse cursor-pointer'
-                                : 'bg-gray-900 border-gray-700 text-gray-700 cursor-not-allowed'
-                        }
-                    `}
-                >
-                    <span className="text-3xl">👆</span>
-                </button>
-                <p className="text-[10px] text-gray-600 mt-4">
-                    HINT: INVERTED SYMBOL (▼) CAUSES POLARITY REVERSAL (+180°)
-                </p>
-            </div>
-
-          </div>
-        ) : (
-          <div className="z-10 text-center animate-bounce">
-             <h1 className="text-4xl text-red-500 font-bold">UNLOCKED</h1>
-             <p className="text-sm text-red-800">THE SPIRITS ARE APPEASED</p>
-          </div>
-        )
-      )}
-    </div>
-  );
-};
+// ParallaxLock component removed - replaced with PrismMechanics puzzle
 
 // --- Mock Data ---
 // ในการใช้งานจริง ให้เปลี่ยน path ของรูปภาพให้ตรงกับ assets ของคุณ
@@ -539,15 +684,13 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
 
   // --- PC State ---
   const [pcStage, setPcStage] = useState<'LOCKED' | 'SCANNING' | 'DESKTOP'>('LOCKED');
-  const [selectedFingerprint, setSelectedFingerprint] = useState<FingerprintFile | null>(null);
 
   // --- USB State ---
-  const [usbStep, setUsbStep] = useState<'INSERT' | 'PARALLAX' | 'UNLOCKED'>('INSERT');
+  const [usbStep, setUsbStep] = useState<'INSERT' | 'PRISM' | 'UNLOCKED'>('INSERT');
   const [usbParallaxCleared, setUsbParallaxCleared] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [pcTerminalOpen, setPcTerminalOpen] = useState(false);
   const [pcWindow, setPcWindow] = useState<'NONE' | 'PROJECT'>('NONE');
-  const [pcPuzzleCleared, setPcPuzzleCleared] = useState(false);
   const [pcTerminalLines, setPcTerminalLines] = useState<string[]>([
     'tu-macbook-pro:~$ type "help" เพื่อดูคำสั่งที่ใช้ได้'
   ]);
@@ -571,21 +714,6 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
         }
       }
     }
-  };
-
-  const handleFingerprintScan = () => {
-    if (!selectedFingerprint || !pcPuzzleCleared) return;
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        clearInterval(interval);
-        if (selectedFingerprint.isMatch) {
-          setTimeout(() => {
-              setUnlockedDevices(prev => [...prev, 'PC']);
-              setPcStage('DESKTOP');
-          }, 500);
-        }
-      }
-    }, 100);
   };
 
   const appendTerminal = (lines: string | string[]) => {
@@ -644,12 +772,9 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
           if (unlockedDevices.includes('PC')) {
             setPcStage('DESKTOP');
             setPcWindow('NONE');
-            setPcPuzzleCleared(true);
           }
           else {
             setPcStage('LOCKED');
-            setPcPuzzleCleared(false);
-            setSelectedFingerprint(null);
           }
         }}
         className="group relative bg-gray-900 border-2 border-gray-700 hover:border-purple-500 rounded-xl p-6 flex flex-col items-center gap-4 transition-all hover:scale-105"
@@ -805,7 +930,7 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
   const renderPC = () => (
     <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden flex flex-col relative border border-gray-700">
         <div className="h-8 bg-gray-800 flex items-center px-4 space-x-2 border-b border-gray-700">
-          <div className="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400 transition-colors" onClick={() => { setActiveDevice('NONE'); setPcWindow('NONE'); setPcPuzzleCleared(false); }} title="Close" />
+          <div className="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400 transition-colors" onClick={() => { setActiveDevice('NONE'); setPcWindow('NONE'); }} title="Close" />
         <div className="w-3 h-3 rounded-full bg-yellow-500" />
         <div className="w-3 h-3 rounded-full bg-green-500" />
         <span className="text-gray-400 text-xs ml-4">Tu_MacBook_Pro — System Access</span>
@@ -815,7 +940,7 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-900 text-center relative">
             {/* Back Button */}
             <button 
-              onClick={() => { setActiveDevice('NONE'); setPcPuzzleCleared(false); }} 
+              onClick={() => { setActiveDevice('NONE'); }} 
               className="absolute top-4 right-4 p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all flex items-center gap-2 border border-gray-700"
             >
               <X className="w-4 h-4" />
@@ -823,7 +948,6 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
             </button>
             <div className="w-full flex flex-col items-center justify-center">
               <HardMasterLock onUnlock={() => {
-                setPcPuzzleCleared(true);
                 setUnlockedDevices(prev => [...prev, 'PC']);
                 setPcStage('DESKTOP');
               }} />
@@ -995,22 +1119,22 @@ const Stage2Investigation = ({ onComplete, status, onRequestHint }: { onComplete
                 <div className="animate-bounce mb-8">
                     <Usb className="w-24 h-24 text-gray-600 mx-auto" />
                 </div>
-                <h2 className="text-2xl font-bold text-red-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+                <h2 className="text-2xl font-bold text-green-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
                     <ShieldAlert /> Security Clearance
                 </h2>
                 <p className="text-gray-500 text-xs mb-6">PHYSICAL SECURITY TOKEN REQUIRED</p>
                 <button 
-                    onClick={() => setUsbStep('PARALLAX')}
-                    className="bg-red-900 hover:bg-red-700 text-white font-bold py-4 px-8 rounded shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all"
+                    onClick={() => setUsbStep('PRISM')}
+                    className="bg-green-900 hover:bg-green-700 text-white font-bold py-4 px-8 rounded shadow-[0_0_20px_rgba(34,197,94,0.5)] transition-all"
                 >
                     INSERT SECURITY KEY
                 </button>
             </div>
         )}
 
-        {usbStep === 'PARALLAX' && !usbParallaxCleared && (
-            <div className="w-full h-full flex items-center justify-center">
-                <ParallaxLock onUnlock={() => {
+        {usbStep === 'PRISM' && !usbParallaxCleared && (
+            <div className="w-full h-full flex items-center justify-center overflow-y-auto">
+                <PrismMechanics onUnlock={() => {
                     setUsbParallaxCleared(true);
                     setUsbStep('UNLOCKED');
                 }} />
